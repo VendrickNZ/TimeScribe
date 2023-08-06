@@ -1,4 +1,4 @@
-package nz.ac.uclive.jis48.assignment1
+package nz.ac.uclive.jis48.timescribe
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("nz.ac.uclive.jis48.assignment1", appContext.packageName)
+        assertEquals("nz.ac.uclive.jis48.timescribe", appContext.packageName)
     }
 }

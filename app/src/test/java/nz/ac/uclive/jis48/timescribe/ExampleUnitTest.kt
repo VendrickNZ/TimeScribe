@@ -1,4 +1,4 @@
-package nz.ac.uclive.jis48.assignment1
+package nz.ac.uclive.jis48.timescribe
 
 import org.junit.Test
 

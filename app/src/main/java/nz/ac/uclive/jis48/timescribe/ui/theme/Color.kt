@@ -1,4 +1,4 @@
-package nz.ac.uclive.jis48.assignment1.ui.theme
+package nz.ac.uclive.jis48.timescribe.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'nz.ac.uclive.jis48.assignment1'
+    namespace 'nz.ac.uclive.jis48.timescribe'
     compileSdk 33
 
     defaultConfig {
-        applicationId "nz.ac.uclive.jis48.assignment1"
+        applicationId "nz.ac.uclive.jis48.timescribe"
         minSdk 28
         targetSdk 33
         versionCode 1
