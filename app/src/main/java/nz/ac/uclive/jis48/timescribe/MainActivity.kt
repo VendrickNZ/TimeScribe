@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-        
+
         ) { paddingValues ->
             NavHost(navController, startDestination = "Timer") {
                 composable("Timer") {

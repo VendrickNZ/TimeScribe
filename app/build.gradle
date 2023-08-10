@@ -60,19 +60,8 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_ui_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_ui_version"
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.0'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.20'
     implementation "androidx.fragment:fragment-ktx:1.5.1"
     implementation "androidx.navigation:navigation-fragment-ktx:2.5.1"
     implementation "androidx.navigation:navigation-ui-ktx:2.5.1"
-
-}
-
-// Add this to the bottom of the file
-configurations.all {
-    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
-        if (details.requested.group == 'org.jetbrains.kotlin'
-                && details.requested.name.startsWith('kotlin-stdlib')) {
-            details.useVersion '1.7.21'
-        }
-    }
 }
