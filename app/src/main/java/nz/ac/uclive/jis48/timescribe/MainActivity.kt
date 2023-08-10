@@ -3,15 +3,14 @@ package nz.ac.uclive.jis48.timescribe
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.painterResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import nz.ac.uclive.jis48.timescribe.data.ScreenItem
 import nz.ac.uclive.jis48.timescribe.ui.screens.timer.TimerScreen
 import nz.ac.uclive.jis48.timescribe.ui.screens.history.HistoryScreen
 import nz.ac.uclive.jis48.timescribe.ui.screens.settings.SettingsScreen
@@ -31,7 +30,10 @@ class MainActivity : ComponentActivity() {
     fun MainScreen() {
         val navController = rememberNavController()
         val items = listOf(
-            "Timer", "History", "Settings"
+            ScreenItem("Timer", R.drawable.timer_icon),
+            ScreenItem("History", R.drawable.history_icon),
+            ScreenItem("Settings", R.drawable.settings_icon)
+
         )
 
         Scaffold(
@@ -39,14 +41,14 @@ class MainActivity : ComponentActivity() {
                 BottomNavigation {
                     val navBackStackEntry = navController.currentBackStackEntryAsState()
                     val currentRoute = navBackStackEntry.value?.destination?.route
-                    items.forEach { screen ->
+                    items.forEach { screenItem ->
                         BottomNavigationItem(
-                            icon = { Icon(Icons.Default.Home, contentDescription = null) }, // Placeholder icon for now
-                            label = { Text(screen) },
-                            selected = currentRoute == screen,
+                            icon = { Icon(painterResource(id = screenItem.iconResId), contentDescription = "Navbar Icon") },
+                            label = { Text(screenItem.name) },
+                            selected = currentRoute == screenItem.name,
                             onClick = {
-                                if (currentRoute != screen) {
-                                    navController.navigate(screen)
+                                if (currentRoute != screenItem.name) {
+                                    navController.navigate(screenItem.name)
                                 }
                             }
                         )
