@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">TimeScribe</string>
+    <string name="start_button">Start</string>
+    <string name="pause_button">Pause</string>
+    <string name="resume_button">Resume</string>
+    <string name="stop_button">Stop</string>
+    <string name="restart_button">Restart</string>
+    <string name="timer_button">Timer</string>
+    <string name="history_button">History</string>
+    <string name="settings_button">Settings</string>
+    <string name="pomodoro_settings_label">Pomodoro Settings</string>
+    <string name="work_duration_label">Work Duration</string>
+    <string name="notification_settings_label">Notification Settings</string>
+    <string name="sound_notification_label">Sound Notification</string>
+    <string name="popup_notification_label">Popup Notification</string>
+    <string name="dark_mode_label">Dark Mode</string>
+    <string name="custom_label">Custom</string>
+    <string name="custom_value_label">Custom</string>
 </resources>

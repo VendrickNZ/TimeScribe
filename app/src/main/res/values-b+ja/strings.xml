@@ -8,4 +8,12 @@
     <string name="timer_button">タイマー</string>
     <string name="history_button">歴史</string>
     <string name="settings_button">設定</string>
+    <string name="pomodoro_settings_label">ポモドーロの設定</string>
+    <string name="work_duration_label">作業期間</string>
+    <string name="notification_settings_label">通知設定</string>
+    <string name="sound_notification_label">音声通知</string>
+    <string name="popup_notification_label">ポップアップ通知</string>
+    <string name="dark_mode_label">ダークモード</string>
+    <string name="custom_label">カスタム</string>
+    <string name="custom_value_label">カスタム値</string>
 </resources>
