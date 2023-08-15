@@ -5,10 +5,12 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.ui.graphics.Color
+import nz.ac.uclive.jis48.timescribe.ui.screens.settings.SettingsScreen
 
 @Composable
-fun TimeScribeTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun TimeScribeTheme(darkModeState: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val darkColorPalette = darkColors(
         primary = softBlue,
         primaryVariant = darkBlue,
@@ -29,7 +31,7 @@ fun TimeScribeTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Compos
         onSecondary = white
     )
 
-    val colors = if (darkTheme) {
+    val colors = if (darkModeState) {
         darkColorPalette
     } else {
         lightColorPalette

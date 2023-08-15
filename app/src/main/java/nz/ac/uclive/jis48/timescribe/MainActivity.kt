@@ -3,8 +3,11 @@ package nz.ac.uclive.jis48.timescribe
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModelProvider
@@ -13,6 +16,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import nz.ac.uclive.jis48.timescribe.data.ScreenItem
+import nz.ac.uclive.jis48.timescribe.data.SettingsRepository
+import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
+import nz.ac.uclive.jis48.timescribe.models.SettingsViewModelFactory
 import nz.ac.uclive.jis48.timescribe.models.TimerViewModel
 import nz.ac.uclive.jis48.timescribe.ui.screens.timer.TimerScreen
 import nz.ac.uclive.jis48.timescribe.ui.screens.history.HistoryScreen
@@ -26,17 +32,26 @@ const val SETTINGS_ROUTE = "Settings"
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val viewModel: TimerViewModel = ViewModelProvider(this)[TimerViewModel::class.java]
+
+        val settingsRepository = SettingsRepository(context = this)
+
+        val settingsViewModel: SettingsViewModel = ViewModelProvider(
+            this,
+            SettingsViewModelFactory(settingsRepository)
+        )[SettingsViewModel::class.java]
+
+        val timerViewModel: TimerViewModel = ViewModelProvider(this)[TimerViewModel::class.java]
 
         setContent {
-            TimeScribeTheme {
-                MainScreen(viewModel)
+            val isSystemDarkTheme = isSystemInDarkTheme()
+            TimeScribeTheme (darkModeState = isSystemDarkTheme) {
+                MainScreen(timerViewModel, settingsViewModel)
             }
         }
     }
 
     @Composable
-    fun MainScreen(viewModel: TimerViewModel) {
+    fun MainScreen(timerViewModel: TimerViewModel, settingsViewModel: SettingsViewModel) {
 
         val navController = rememberNavController()
         val items = listOf(
@@ -44,8 +59,6 @@ class MainActivity : ComponentActivity() {
             ScreenItem(HISTORY_ROUTE, R.string.history_button, R.drawable.history_icon),
             ScreenItem(SETTINGS_ROUTE, R.string.settings_button, R.drawable.settings_icon)
         )
-
-
 
         Scaffold(
             bottomBar = {
@@ -74,14 +87,14 @@ class MainActivity : ComponentActivity() {
         )
         { paddingValues ->
             NavHost(navController, startDestination = "Timer") {
-                composable("Timer") {
-                    TimerScreen(paddingValues, viewModel)
+                composable(TIMER_ROUTE) {
+                    TimerScreen(paddingValues, timerViewModel)
                 }
-                composable("History") {
+                composable(HISTORY_ROUTE) {
                     HistoryScreen(paddingValues)
                 }
-                composable("Settings") {
-                    SettingsScreen(paddingValues)
+                composable(SETTINGS_ROUTE) {
+                    SettingsScreen(settingsViewModel)
                 }
             }
         }

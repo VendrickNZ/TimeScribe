@@ -10,46 +10,62 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import nz.ac.uclive.jis48.timescribe.ui.theme.TimeScribeTheme
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.fragment.app.viewModels
 import nz.ac.uclive.jis48.timescribe.R
-import kotlin.math.exp
+import nz.ac.uclive.jis48.timescribe.data.Settings
+import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
+
 
 @Composable
-fun SettingsScreen(paddingValues: PaddingValues) {
-    val workDurationState = remember { mutableStateOf(25) }
-    val breakDurationState = remember { mutableStateOf(5) }
-    val longBreakDurationState = remember { mutableStateOf(15) }
-    val cyclesBeforeLongBreakState = remember { mutableStateOf(4) }
-    val soundNotificationState = remember { mutableStateOf(true) }
-    val popupNotificationState = remember { mutableStateOf(true) }
-    val darkModeState = remember { mutableStateOf(false) } // Fixed to false for initial state
+fun SettingsScreen(viewModel: SettingsViewModel) {
+    val settings by viewModel.settingsFlow.collectAsState(initial = Settings())
+    val workDurationState = remember { mutableStateOf(settings.workDuration) }
+    val breakDurationState = remember { mutableStateOf(settings.breakDuration) }
+    val longBreakDurationState = remember { mutableStateOf(settings.longBreakDuration) }
+    val cyclesBeforeLongBreakState = remember { mutableStateOf(settings.cyclesBeforeLongBreak) }
+    val soundNotificationState = remember { mutableStateOf(settings.soundNotification) }
+    val popupNotificationState = remember { mutableStateOf(settings.popupNotification) }
+    val darkModeState = remember { mutableStateOf(settings.darkMode) }
 
-    Column(modifier = Modifier.padding(paddingValues)) {
+    Button(onClick = {
+        val newSettings = Settings(
+            workDuration = workDurationState.value,
+            breakDuration = breakDurationState.value,
+            longBreakDuration = longBreakDurationState.value,
+            cyclesBeforeLongBreak = cyclesBeforeLongBreakState.value,
+            soundNotification = soundNotificationState.value,
+            popupNotification = popupNotificationState.value,
+            darkMode = darkModeState.value
+        )
+        viewModel.saveSettings(newSettings)
+    }) {
+        Text("Save")
+    }
+
+
+    Column(modifier = Modifier.padding(16.dp)) {
         Text(text = stringResource(R.string.pomodoro_settings_label), style = MaterialTheme.typography.h6)
         PomodoroWorkDuration(workDurationState)
         Text(text = stringResource(R.string.notification_settings_label), style = MaterialTheme.typography.h6)
         NotificationSettings(soundNotificationState, popupNotificationState)
         DarkModeSetting(darkModeState)
     }
+
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PomodoroWorkDuration(workDurationState: MutableState<Int>) {
-    val context = LocalContext.current
     val expanded = remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -104,8 +120,6 @@ fun PomodoroWorkDuration(workDurationState: MutableState<Int>) {
             )
         )
     }
-
-
 }
 
 @Composable
@@ -138,12 +152,14 @@ fun DarkModeSetting(darkModeState: MutableState<Boolean>) {
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = stringResource(R.string.dark_mode_label))
+        Text(text = "Dark Mode")
         Switch(checked = darkModeState.value, onCheckedChange = { darkModeState.value = it })
     }
 }
 
+
 class SettingsFragment : Fragment() {
+    private val viewModel: SettingsViewModel by viewModels()
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -152,7 +168,7 @@ class SettingsFragment : Fragment() {
         return ComposeView(requireContext()).apply {
             setContent {
                 TimeScribeTheme {
-                    SettingsScreen(PaddingValues(0.dp))
+                    SettingsScreen(viewModel)
                 }
             }
         }
