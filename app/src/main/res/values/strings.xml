@@ -10,6 +10,9 @@
     <string name="settings_button">Settings</string>
     <string name="pomodoro_settings_label">Pomodoro Settings</string>
     <string name="work_duration_label">Work Duration</string>
+    <string name="break_duration_label">Break Duration</string>
+    <string name="long_break_duration_label">Long Break Duration</string>
+    <string name="cycles_before_long_break_label">Cycles Before Long Break</string>
     <string name="notification_settings_label">Notification Settings</string>
     <string name="sound_notification_label">Sound Notification</string>
     <string name="popup_notification_label">Popup Notification</string>
