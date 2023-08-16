@@ -1,6 +1,7 @@
 package nz.ac.uclive.jis48.timescribe.ui.screens.settings
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -30,60 +31,59 @@ import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel) {
     val settings by viewModel.settingsFlow.collectAsState(initial = Settings())
-    val workDurationState = remember { mutableStateOf(settings.workDuration) }
-    val breakDurationState = remember { mutableStateOf(settings.breakDuration) }
-    val longBreakDurationState = remember { mutableStateOf(settings.longBreakDuration) }
-    val cyclesBeforeLongBreakState = remember { mutableStateOf(settings.cyclesBeforeLongBreak) }
-    val soundNotificationState = remember { mutableStateOf(settings.soundNotification) }
-    val popupNotificationState = remember { mutableStateOf(settings.popupNotification) }
-    val darkModeState = remember { mutableStateOf(settings.darkMode) }
+    Log.d("SettingsScreen", "Observed settings: $settings")
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(text = stringResource(R.string.pomodoro_settings_label), style = MaterialTheme.typography.h6)
-        PomodoroWorkDuration(workDurationState)
-        PomodoroBreakDuration(breakDurationState)
-        PomodoroLongBreakDuration(longBreakDurationState)
-        PomodoroCyclesBeforeLongBreak(cyclesBeforeLongBreakState)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(text = stringResource(R.string.notification_settings_label), style = MaterialTheme.typography.h6)
-        NotificationSettings(soundNotificationState, popupNotificationState)
-        DarkModeSetting(darkModeState)
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
-                .wrapContentHeight()
-                .align(Alignment.CenterHorizontally)
-        ) {
-            Button(
-                onClick = {
-                    val newSettings = Settings(
-                        workDuration = workDurationState.value,
-                        breakDuration = breakDurationState.value,
-                        longBreakDuration = longBreakDurationState.value,
-                        cyclesBeforeLongBreak = cyclesBeforeLongBreakState.value,
-                        soundNotification = soundNotificationState.value,
-                        popupNotification = popupNotificationState.value,
-                        darkMode = darkModeState.value
-                    )
-                    viewModel.saveSettings(newSettings)
-                }
-            ) {
-                Text("Save")
-            }
-        }
+    val updateWorkDuration: (Int) -> Unit = { newDuration ->
+        val newSettings = settings.copy(workDuration = newDuration)
+        viewModel.saveSettings(newSettings)
     }
 
+    val updateBreakDuration: (Int) -> Unit = { newDuration ->
+        val newSettings = settings.copy(breakDuration = newDuration)
+        viewModel.saveSettings(newSettings)
+    }
+
+    val updateLongBreakDuration: (Int) -> Unit = { newDuration ->
+        val newSettings = settings.copy(longBreakDuration = newDuration)
+        viewModel.saveSettings(newSettings)
+    }
+
+    val updateCyclesBeforeLongBreak: (Int) -> Unit = { newCycles ->
+        val newSettings = settings.copy(cyclesBeforeLongBreak = newCycles)
+        viewModel.saveSettings(newSettings)
+    }
+
+    val updateDarkMode: (Boolean) -> Unit = { newSetting ->
+        val newSettings = settings.copy(darkMode = newSetting)
+        viewModel.saveSettings(newSettings)
+    }
+
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(
+            text = stringResource(R.string.pomodoro_settings_label),
+            style = MaterialTheme.typography.h6
+        )
+        PomodoroWorkDuration(workDuration = settings.workDuration, onUpdateWorkDuration = updateWorkDuration)
+        PomodoroBreakDuration(breakDuration = settings.breakDuration, onUpdateBreakDuration = updateBreakDuration)
+        PomodoroLongBreakDuration(longBreakDuration = settings.longBreakDuration, onUpdateLongBreakDuration = updateLongBreakDuration)
+        PomodoroCyclesBeforeLongBreak(cyclesBeforeLongBreak = settings.cyclesBeforeLongBreak, onUpdateCyclesBeforeLongBreak = updateCyclesBeforeLongBreak)
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.other_label),
+            style = MaterialTheme.typography.h6
+        )
+        DarkModeSetting(darkModeState = settings.darkMode, onUpdateDarkMode = updateDarkMode)
+    }
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PomodoroWorkDuration(workDurationState: MutableState<Int>) {
+fun PomodoroWorkDuration(workDuration: Int, onUpdateWorkDuration: (Int) -> Unit) {
     val expanded = remember { mutableStateOf(false) }
+    val customValue = remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-    val customValue = remember { mutableStateOf("") }
 
     Row(
         modifier = Modifier
@@ -94,21 +94,21 @@ fun PomodoroWorkDuration(workDurationState: MutableState<Int>) {
         Text(text = stringResource(R.string.work_duration_label))
         Box {
             Text(
-                text = if (workDurationState.value == -1) stringResource(R.string.custom_label) else workDurationState.value.toString(),
+                text = if (workDuration == -1) stringResource(R.string.custom_label) else workDuration.toString(),
                 modifier = Modifier.clickable { expanded.value = true }
             )
             DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }) {
                 val commonDurations = listOf(20, 25, 50, 55, 120)
                 commonDurations.forEach { duration ->
                     DropdownMenuItem(onClick = {
-                        workDurationState.value = duration
+                        onUpdateWorkDuration(duration)
                         expanded.value = false
                     }) {
                         Text(text = duration.toString())
                     }
                 }
                 DropdownMenuItem(onClick = {
-                    workDurationState.value = -1
+                    onUpdateWorkDuration(-1)
                     expanded.value = false
                 }) {
                     Text(text = stringResource(R.string.custom_label))
@@ -116,7 +116,8 @@ fun PomodoroWorkDuration(workDurationState: MutableState<Int>) {
             }
         }
     }
-    if (workDurationState.value == -1) {
+
+    if (workDuration == -1) {
         TextField(
             value = customValue.value,
             onValueChange = { customValue.value = it },
@@ -128,7 +129,8 @@ fun PomodoroWorkDuration(workDurationState: MutableState<Int>) {
                 onDone = {
                     keyboardController?.hide()
                     focusManager.clearFocus()
-                    workDurationState.value = customValue.value.toIntOrNull() ?: 25
+                    val newDuration = customValue.value.toIntOrNull() ?: 25
+                    onUpdateWorkDuration(newDuration)
                     customValue.value = ""
                 }
             )
@@ -138,7 +140,7 @@ fun PomodoroWorkDuration(workDurationState: MutableState<Int>) {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PomodoroBreakDuration(breakDurationState: MutableState<Int>) {
+fun PomodoroBreakDuration(breakDuration: Int, onUpdateBreakDuration: (Int) -> Unit) {
     val expanded = remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -153,21 +155,21 @@ fun PomodoroBreakDuration(breakDurationState: MutableState<Int>) {
         Text(text = stringResource(R.string.break_duration_label))
         Box {
             Text(
-                text = if (breakDurationState.value == -1) stringResource(R.string.custom_label) else breakDurationState.value.toString(),
+                text = if (breakDuration == -1) stringResource(R.string.custom_label) else breakDuration.toString(),
                 modifier = Modifier.clickable { expanded.value = true }
             )
             DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }) {
                 val commonDurations = listOf(5, 10, 15, 20)
                 commonDurations.forEach { duration ->
                     DropdownMenuItem(onClick = {
-                        breakDurationState.value = duration
+                        onUpdateBreakDuration(duration)
                         expanded.value = false
                     }) {
                         Text(text = duration.toString())
                     }
                 }
                 DropdownMenuItem(onClick = {
-                    breakDurationState.value = -1
+                    onUpdateBreakDuration(-1)
                     expanded.value = false
                 }) {
                     Text(text = stringResource(R.string.custom_label))
@@ -175,7 +177,7 @@ fun PomodoroBreakDuration(breakDurationState: MutableState<Int>) {
             }
         }
     }
-    if (breakDurationState.value == -1) {
+    if (breakDuration == -1) {
         TextField(
             value = customValue.value,
             onValueChange = { customValue.value = it },
@@ -187,7 +189,8 @@ fun PomodoroBreakDuration(breakDurationState: MutableState<Int>) {
                 onDone = {
                     keyboardController?.hide()
                     focusManager.clearFocus()
-                    breakDurationState.value = customValue.value.toIntOrNull() ?: 5
+                    val newDuration = customValue.value.toIntOrNull() ?: 5
+                    onUpdateBreakDuration(newDuration)
                     customValue.value = ""
                 }
             )
@@ -197,7 +200,7 @@ fun PomodoroBreakDuration(breakDurationState: MutableState<Int>) {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PomodoroLongBreakDuration(longBreakDurationState: MutableState<Int>) {
+fun PomodoroLongBreakDuration(longBreakDuration: Int, onUpdateLongBreakDuration: (Int) -> Unit) {
     val expanded = remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -212,21 +215,21 @@ fun PomodoroLongBreakDuration(longBreakDurationState: MutableState<Int>) {
         Text(text = stringResource(R.string.long_break_duration_label))
         Box {
             Text(
-                text = if (longBreakDurationState.value == -1) stringResource(R.string.custom_label) else longBreakDurationState.value.toString(),
+                text = if (longBreakDuration == -1) stringResource(R.string.custom_label) else longBreakDuration.toString(),
                 modifier = Modifier.clickable { expanded.value = true }
             )
             DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }) {
                 val commonDurations = listOf(15, 20, 30)
                 commonDurations.forEach { duration ->
                     DropdownMenuItem(onClick = {
-                        longBreakDurationState.value = duration
+                        onUpdateLongBreakDuration(duration)
                         expanded.value = false
                     }) {
                         Text(text = duration.toString())
                     }
                 }
                 DropdownMenuItem(onClick = {
-                    longBreakDurationState.value = -1
+                    onUpdateLongBreakDuration(-1)
                     expanded.value = false
                 }) {
                     Text(text = stringResource(R.string.custom_label))
@@ -234,7 +237,7 @@ fun PomodoroLongBreakDuration(longBreakDurationState: MutableState<Int>) {
             }
         }
     }
-    if (longBreakDurationState.value == -1) {
+    if (longBreakDuration == -1) {
         TextField(
             value = customValue.value,
             onValueChange = { customValue.value = it },
@@ -246,7 +249,8 @@ fun PomodoroLongBreakDuration(longBreakDurationState: MutableState<Int>) {
                 onDone = {
                     keyboardController?.hide()
                     focusManager.clearFocus()
-                    longBreakDurationState.value = customValue.value.toIntOrNull() ?: 15
+                    val newDuration = customValue.value.toIntOrNull() ?: 15
+                    onUpdateLongBreakDuration(newDuration)
                     customValue.value = ""
                 }
             )
@@ -256,7 +260,7 @@ fun PomodoroLongBreakDuration(longBreakDurationState: MutableState<Int>) {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PomodoroCyclesBeforeLongBreak(cyclesBeforeLongBreakState: MutableState<Int>) {
+fun PomodoroCyclesBeforeLongBreak(cyclesBeforeLongBreak: Int, onUpdateCyclesBeforeLongBreak: (Int) -> Unit) {
     val expanded = remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -271,21 +275,21 @@ fun PomodoroCyclesBeforeLongBreak(cyclesBeforeLongBreakState: MutableState<Int>)
         Text(text = stringResource(R.string.cycles_before_long_break_label))
         Box {
             Text(
-                text = if (cyclesBeforeLongBreakState.value == -1) stringResource(R.string.custom_label) else cyclesBeforeLongBreakState.value.toString(),
+                text = if (cyclesBeforeLongBreak == -1) stringResource(R.string.custom_label) else cyclesBeforeLongBreak.toString(),
                 modifier = Modifier.clickable { expanded.value = true }
             )
             DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }) {
                 val commonCycles = listOf(3, 4, 5)
                 commonCycles.forEach { cycles ->
                     DropdownMenuItem(onClick = {
-                        cyclesBeforeLongBreakState.value = cycles
+                        onUpdateCyclesBeforeLongBreak(cycles)
                         expanded.value = false
                     }) {
                         Text(text = cycles.toString())
                     }
                 }
                 DropdownMenuItem(onClick = {
-                    cyclesBeforeLongBreakState.value = -1
+                    onUpdateCyclesBeforeLongBreak(-1)
                     expanded.value = false
                 }) {
                     Text(text = stringResource(R.string.custom_label))
@@ -293,7 +297,7 @@ fun PomodoroCyclesBeforeLongBreak(cyclesBeforeLongBreakState: MutableState<Int>)
             }
         }
     }
-    if (cyclesBeforeLongBreakState.value == -1) {
+    if (cyclesBeforeLongBreak == -1) {
         TextField(
             value = customValue.value,
             onValueChange = { customValue.value = it },
@@ -305,7 +309,8 @@ fun PomodoroCyclesBeforeLongBreak(cyclesBeforeLongBreakState: MutableState<Int>)
                 onDone = {
                     keyboardController?.hide()
                     focusManager.clearFocus()
-                    cyclesBeforeLongBreakState.value = customValue.value.toIntOrNull() ?: 4
+                    val newDuration = customValue.value.toIntOrNull() ?: 4
+                    onUpdateCyclesBeforeLongBreak(newDuration)
                     customValue.value = ""
                 }
             )
@@ -314,29 +319,7 @@ fun PomodoroCyclesBeforeLongBreak(cyclesBeforeLongBreakState: MutableState<Int>)
 }
 
 @Composable
-fun NotificationSettings(
-    soundNotificationState: MutableState<Boolean>,
-    popupNotificationState: MutableState<Boolean>
-) {
-    ToggleSetting(label = stringResource(R.string.sound_notification_label), checkedState = soundNotificationState)
-    ToggleSetting(label = stringResource(R.string.popup_notification_label), checkedState = popupNotificationState)
-}
-
-@Composable
-fun ToggleSetting(label: String, checkedState: MutableState<Boolean>) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text = label)
-        Switch(checked = checkedState.value, onCheckedChange = { checkedState.value = it })
-    }
-}
-
-@Composable
-fun DarkModeSetting(darkModeState: MutableState<Boolean>) {
+fun DarkModeSetting(darkModeState: Boolean, onUpdateDarkMode: (Boolean) -> Unit ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -344,7 +327,7 @@ fun DarkModeSetting(darkModeState: MutableState<Boolean>) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = "Dark Mode")
-        Switch(checked = darkModeState.value, onCheckedChange = { darkModeState.value = it })
+        Switch(checked = darkModeState, onCheckedChange = { onUpdateDarkMode(it) })
     }
 }
 

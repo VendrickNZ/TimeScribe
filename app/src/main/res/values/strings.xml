@@ -5,6 +5,7 @@
     <string name="resume_button">Resume</string>
     <string name="stop_button">Stop</string>
     <string name="restart_button">Restart</string>
+    <string name="reset_button">Reset</string>
     <string name="timer_button">Timer</string>
     <string name="history_button">History</string>
     <string name="settings_button">Settings</string>
@@ -13,9 +14,7 @@
     <string name="break_duration_label">Break Duration</string>
     <string name="long_break_duration_label">Long Break Duration</string>
     <string name="cycles_before_long_break_label">Cycles Before Long Break</string>
-    <string name="notification_settings_label">Notification Settings</string>
-    <string name="sound_notification_label">Sound Notification</string>
-    <string name="popup_notification_label">Popup Notification</string>
+    <string name="other_label">Other</string>
     <string name="dark_mode_label">Dark Mode</string>
     <string name="custom_label">Custom</string>
     <string name="custom_value_label">Custom</string>

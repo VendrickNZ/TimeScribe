@@ -7,6 +7,7 @@ import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.graphics.Color
+import nz.ac.uclive.jis48.timescribe.models.TimerViewModel
 import nz.ac.uclive.jis48.timescribe.ui.screens.settings.SettingsScreen
 
 @Composable
@@ -22,14 +23,15 @@ fun TimeScribeTheme(darkModeState: Boolean = isSystemInDarkTheme(), content: @Co
     )
 
     val lightColorPalette = lightColors(
-        primary = softBlue,
-        primaryVariant = darkBlue,
-        secondary = gentleOrange,
+        primary = lightPurple,
+        primaryVariant = darkPurple,
+        secondary = teal,
         background = white,
         surface = white,
-        onPrimary = black,
-        onSecondary = white
+        onPrimary = white,
+        onSecondary = black
     )
+
 
     val colors = if (darkModeState) {
         darkColorPalette

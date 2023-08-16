@@ -3,20 +3,21 @@ package nz.ac.uclive.jis48.timescribe
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import nz.ac.uclive.jis48.timescribe.data.ScreenItem
+import nz.ac.uclive.jis48.timescribe.data.Settings
 import nz.ac.uclive.jis48.timescribe.data.SettingsRepository
+import nz.ac.uclive.jis48.timescribe.data.TimerRepository
+import nz.ac.uclive.jis48.timescribe.models.HistoryViewModel
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModelFactory
 import nz.ac.uclive.jis48.timescribe.models.TimerViewModel
@@ -39,19 +40,35 @@ class MainActivity : ComponentActivity() {
             this,
             SettingsViewModelFactory(settingsRepository)
         )[SettingsViewModel::class.java]
+        val timerRepository = TimerRepository(context = this)
+        val factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return TimerViewModel(settingsViewModel, timerRepository = timerRepository) as T
+            }
+        }
 
-        val timerViewModel: TimerViewModel = ViewModelProvider(this)[TimerViewModel::class.java]
+        val timerViewModel: TimerViewModel = ViewModelProvider(this, factory)[TimerViewModel::class.java]
+
+        val historyViewModel: HistoryViewModel = ViewModelProvider(
+            this,
+            object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return HistoryViewModel(timerRepository) as T
+                }
+            }
+        )[HistoryViewModel::class.java]
 
         setContent {
-            val isSystemDarkTheme = isSystemInDarkTheme()
-            TimeScribeTheme (darkModeState = isSystemDarkTheme) {
-                MainScreen(timerViewModel, settingsViewModel)
+            val settings by settingsViewModel.settingsFlow.collectAsState(initial = Settings())
+            TimeScribeTheme (darkModeState = settings.darkMode) {
+                MainScreen(timerViewModel, settingsViewModel, historyViewModel)
             }
         }
     }
 
     @Composable
-    fun MainScreen(timerViewModel: TimerViewModel, settingsViewModel: SettingsViewModel) {
+    fun MainScreen(timerViewModel: TimerViewModel, settingsViewModel: SettingsViewModel,
+                   historyViewModel: HistoryViewModel) {
 
         val navController = rememberNavController()
         val items = listOf(
@@ -91,7 +108,7 @@ class MainActivity : ComponentActivity() {
                     TimerScreen(paddingValues, timerViewModel)
                 }
                 composable(HISTORY_ROUTE) {
-                    HistoryScreen(paddingValues)
+                    HistoryScreen(paddingValues, historyViewModel)
                 }
                 composable(SETTINGS_ROUTE) {
                     SettingsScreen(settingsViewModel)
