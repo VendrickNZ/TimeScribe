@@ -19,15 +19,26 @@ import java.util.*
 class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                     private val timerRepository: TimerRepository
 ) : ViewModel() {
+
     enum class TimerState {
         IDLE, WORK, BREAK, LONG_BREAK
     }
 
     private var timerJob: Job? = null
-    val timeElapsed: MutableState<Int> = mutableStateOf(0)
+    private val timeElapsed: MutableState<Int> = mutableStateOf(0)
     var timerState: MutableState<TimerState> = mutableStateOf(TimerState.IDLE)
     private val settings: MutableState<Settings> = mutableStateOf(Settings())
     private var currentCycle: Int = 0
+
+    private var startDate: Date? = null
+    private var endDate: Date? = null
+    private var pauseStartTime: Date? = null
+    private var totalPauseDuration: Long = 0
+    private var lastNonIdleState: TimerState? = TimerState.WORK
+
+
+    val sessions = mutableStateOf<List<Session>>(emptyList())
+
 
     init {
         viewModelScope.launch {
@@ -41,15 +52,15 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         get() = timeElapsed.value
 
     fun startTimer() {
-        Log.d("TimerViewModel", "startTimer called, current state: ${timerState.value}")
         if (timerState.value != TimerState.IDLE) return
+        startDate = Date()
         timerState.value = TimerState.WORK
+        lastNonIdleState = timerState.value
         timerJob = viewModelScope.launch {
             while (true) {
-                Log.d("TimerViewModel", "inside loop, current timeElapsed: ${timeElapsed.value}")
                 when (timerState.value) {
                     TimerState.WORK -> {
-                        if (timeElapsed.value < settings.value.workDuration * 60) {
+                        if (settings.value.workDuration == 0 || timeElapsed.value < settings.value.workDuration * 60) {
                             timeElapsed.value += 1
                         } else {
                             currentCycle++
@@ -63,7 +74,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                         }
                     }
                     TimerState.BREAK -> {
-                        if (timeElapsed.value < settings.value.breakDuration * 60) {
+                        if (settings.value.breakDuration == 0 || timeElapsed.value < settings.value.breakDuration * 60) {
                             timeElapsed.value += 1
                         } else {
                             timerState.value = TimerState.WORK
@@ -71,7 +82,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                         }
                     }
                     TimerState.LONG_BREAK -> {
-                        if (timeElapsed.value < settings.value.longBreakDuration * 60) {
+                        if (settings.value.longBreakDuration == 0 || timeElapsed.value < settings.value.longBreakDuration * 60) {
                             timeElapsed.value += 1
                         } else {
                             timerState.value = TimerState.WORK
@@ -85,18 +96,28 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         }
     }
 
+
     fun pauseTimer() {
         if (timerState.value == TimerState.WORK || timerState.value == TimerState.BREAK || timerState.value == TimerState.LONG_BREAK) {
+            lastNonIdleState = timerState.value
+            pauseStartTime = Date()
             timerState.value = TimerState.IDLE
         }
     }
 
     fun resumeTimer() {
-        if (timerState.value == TimerState.IDLE) timerState.value = TimerState.WORK
+        if (timerState.value == TimerState.IDLE) {
+            pauseStartTime?.let {
+                totalPauseDuration += Date().time - it.time
+            }
+            timerState.value = lastNonIdleState ?: TimerState.WORK
+        }
     }
 
     fun resetTimer() {
         if (timerState.value == TimerState.IDLE) {
+            totalPauseDuration = 0
+            pauseStartTime = null
             timerJob?.cancel()
             timerJob = null
             timeElapsed.value = 0
@@ -104,8 +125,10 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         }
     }
 
-
     fun stopTimer() {
+        totalPauseDuration = 0
+        pauseStartTime = null
+        endDate = Date(startDate?.time ?: (0 + timeElapsedState * 1000L + totalPauseDuration))
         timerJob?.cancel()
         timerJob = null
         timeElapsed.value = 0
@@ -115,16 +138,20 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         saveSession()
     }
 
+
     private fun saveSession() {
         val session = Session(
-            startDate = Date(), // Fill with the correct data
-            startTime = "startTime",
+            startDate = startDate ?: Date(),
+            endDate = endDate ?: Date(),
             pauseCount = 0,
-            totalPauseDuration = 0,
-            endTime = "endTime",
-            totalTime = 0
+            totalPauseDuration = totalPauseDuration
         )
         timerRepository.saveSession(session)
+        refreshSessions()
+    }
+
+    fun refreshSessions() {
+        sessions.value = timerRepository.loadTodaySessions()
     }
 
     fun getFormattedTime(): String {
@@ -139,15 +166,6 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         }
     }
 
-    fun getTotalDuration(): String {
-        return when (timerState.value) {
-            TimerState.WORK -> "${settings.value.workDuration} mins"
-            TimerState.BREAK -> "${settings.value.breakDuration} mins"
-            TimerState.LONG_BREAK -> "${settings.value.longBreakDuration} mins"
-            else -> ""
-        }
-    }
-
     fun getProgress(): Float {
         val totalDuration = when (timerState.value) {
             TimerState.WORK -> settings.value.workDuration * 60
@@ -156,6 +174,28 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
             else -> 0
         }
         return if (totalDuration > 0) timeElapsed.value.toFloat() / totalDuration else 0f
+    }
+
+    fun getCurrentStateDuration(): String {
+        val displayState = if (timerState.value == TimerState.IDLE && timeElapsedState != 0) lastNonIdleState else timerState.value
+                return when (displayState) {
+            TimerState.WORK -> "Work: ${settings.value.workDuration} mins"
+            TimerState.BREAK -> "Break: ${settings.value.breakDuration} mins"
+            TimerState.LONG_BREAK -> "Long Break: ${settings.value.longBreakDuration} mins"
+            else -> "Work: ${settings.value.workDuration} mins"
+        }
+    }
+
+    fun getCurrentWorkDuration(): Int {
+        return settings.value.workDuration
+    }
+
+    fun getCurrentBreakDuration(): Int {
+        return settings.value.breakDuration
+    }
+
+    fun getCurrentLongBreakDuration(): Int {
+        return settings.value.longBreakDuration
     }
 }
 

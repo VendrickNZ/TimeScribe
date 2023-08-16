@@ -4,9 +4,7 @@ import java.util.Date
 
 data class Session(
     val startDate: Date,
-    val startTime: String,
+    val endDate: Date,
     val pauseCount: Int,
-    val totalPauseDuration: Long,
-    val endTime: String,
-    val totalTime: Long
+    val totalPauseDuration: Long
 )

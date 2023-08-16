@@ -10,8 +10,11 @@ import java.time.ZoneId
 class TimerRepository(private val context: Context) {
 
     fun saveSession(session: Session) {
+        val sessions = loadSessions().toMutableList()
+        sessions.add(session)
         val gson = Gson()
-        val jsonString = gson.toJson(session)
+        val jsonString = gson.toJson(sessions)
+        Log.d("Saving JSON String", jsonString)
         context.openFileOutput(FILE_NAME, Context.MODE_PRIVATE).use {
             it.write(jsonString.toByteArray())
         }
@@ -21,6 +24,8 @@ class TimerRepository(private val context: Context) {
         return try {
             context.openFileInput(FILE_NAME).use {
                 val jsonString = it.bufferedReader().readText()
+                if (jsonString.isBlank() || jsonString == "[]") return emptyList()
+
                 Log.d("JSON String", jsonString)
                 val gson = Gson()
                 val typeToken = object : TypeToken<List<Session>>() {}.type

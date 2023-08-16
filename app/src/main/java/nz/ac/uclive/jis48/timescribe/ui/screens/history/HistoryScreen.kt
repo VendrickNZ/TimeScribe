@@ -26,22 +26,18 @@ fun HistoryScreen(paddingValues: PaddingValues, viewModel: HistoryViewModel) {
     ) {
         Text(text = "Today's Sessions:")
         todaySessions.forEach { session ->
-            // Display each session as you like, for example:
             Text(text = "Session started at ${session.startDate}")
         }
     }
 }
 
 
-class HistoryFragment : Fragment() {
+class HistoryFragment(val historyViewModel: HistoryViewModel) : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val timerRepository = TimerRepository(requireContext())
-
-        val historyViewModel = HistoryViewModel(timerRepository)
 
         return ComposeView(requireContext()).apply {
             setContent {

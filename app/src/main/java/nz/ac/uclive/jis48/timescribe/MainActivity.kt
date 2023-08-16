@@ -34,26 +34,26 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // I apologize to all who hath eyes
         val settingsRepository = SettingsRepository(context = this)
-
         val settingsViewModel: SettingsViewModel = ViewModelProvider(
             this,
             SettingsViewModelFactory(settingsRepository)
         )[SettingsViewModel::class.java]
+
         val timerRepository = TimerRepository(context = this)
         val factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return TimerViewModel(settingsViewModel, timerRepository = timerRepository) as T
             }
         }
-
         val timerViewModel: TimerViewModel = ViewModelProvider(this, factory)[TimerViewModel::class.java]
 
         val historyViewModel: HistoryViewModel = ViewModelProvider(
             this,
             object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return HistoryViewModel(timerRepository) as T
+                    return HistoryViewModel(timerRepository, timerViewModel) as T
                 }
             }
         )[HistoryViewModel::class.java]

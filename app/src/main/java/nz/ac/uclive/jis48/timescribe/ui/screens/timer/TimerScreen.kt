@@ -3,6 +3,7 @@ package nz.ac.uclive.jis48.timescribe.ui.screens.timer
 import android.content.Context
 import android.content.ContextWrapper
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -43,6 +44,10 @@ import nz.ac.uclive.jis48.timescribe.ui.theme.TimeScribeTheme
 @Composable
 fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel) {
     val showDialog = remember { mutableStateOf(false) }
+    val showResetDialog = remember { mutableStateOf(false) }
+    val currentStateDuration = viewModel.getCurrentStateDuration()
+    val shouldShowDuration = viewModel.getCurrentWorkDuration() > 0 || viewModel.getCurrentBreakDuration() > 0 || viewModel.getCurrentLongBreakDuration() > 0
+    val progress = viewModel.getProgress()
     if (showDialog.value) {
         AlertDialog(
             title = { Text(text = "Stop Timer") },
@@ -69,14 +74,16 @@ fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Total Duration: ${viewModel.getTotalDuration()}",
-                style = MaterialTheme.typography.h6
-            )
-            LinearProgressIndicator(
-                progress = viewModel.getProgress(),
-                color = Color(ContextCompat.getColor(LocalContext.current, R.color.gentle_orange))
-            )
+            if (shouldShowDuration) {
+                Text(
+                    text = currentStateDuration,
+                    style = MaterialTheme.typography.h6
+                )
+                LinearProgressIndicator(
+                    progress = progress,
+                    color = Color(ContextCompat.getColor(LocalContext.current, R.color.gentle_orange))
+                )
+            }
 
             Spacer(modifier = Modifier.weight(0.5f))
             Text(
@@ -94,15 +101,27 @@ fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel) {
                                 Text(text = stringResource(R.string.start_button))
                             }
                         } else {
-                            Button(onClick = { viewModel.resumeTimer() }) {
+                            Button(onClick = { viewModel.resumeTimer() },
+                            modifier = Modifier.width(125.dp)
+                            ){
                                 Text(text = stringResource(R.string.resume_button))
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(onClick = { viewModel.resetTimer() }) {
+                            Spacer(modifier = Modifier.width(35.dp))
+
+                            Button(onClick = { showResetDialog.value = true }) {
                                 Text(text = stringResource(R.string.reset_button))
+                            }
+                            if (showResetDialog.value) {
+                                ConfirmActionDialog(
+                                    title = "Reset Timer",
+                                    message = "Are you sure you want to reset the timer?",
+                                    onConfirm = { viewModel.resetTimer() },
+                                    onDismiss = { showResetDialog.value = false }
+                                )
                             }
 
                             Spacer(modifier = Modifier.width(8.dp))
+
                             Button(onClick = { showDialog.value = true }) {
                                 Text(text = stringResource(R.string.stop_button))
                             }
@@ -120,7 +139,32 @@ fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel) {
     }
 }
 
-
+@Composable
+fun ConfirmActionDialog(
+    title: String,
+    message: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        title = { Text(text = title) },
+        text = { Text(text = message) },
+        onDismissRequest = { onDismiss() },
+        confirmButton = {
+            Button(onClick = {
+                onConfirm()
+                onDismiss()
+            }) {
+                Text(text = "Yes")
+            }
+        },
+        dismissButton = {
+            Button(onClick = { onDismiss() }) {
+                Text(text = "No")
+            }
+        }
+    )
+}
 
 
 class TimerFragment : Fragment() {
@@ -131,25 +175,10 @@ class TimerFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                val settingsViewModel = viewModel<SettingsViewModel>()
-                val factory = TimerViewModelFactory(requireContext(), settingsViewModel)
-                val timerViewModel: TimerViewModel = viewModel(factory = factory)
                 TimeScribeTheme {
                     TimerScreen(PaddingValues(0.dp), viewModel())
                 }
             }
         }
     }
-}
-
-fun Context.findFragmentActivity(): FragmentActivity? {
-    var currentContext = this
-    while (currentContext is ContextWrapper) {
-        if (currentContext is FragmentActivity) {
-            return currentContext
-        }
-        currentContext = currentContext.baseContext
-    }
-    return null
-
 }
