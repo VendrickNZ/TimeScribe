@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
@@ -20,10 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.progressSemantics
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,20 +32,30 @@ import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.viewmodel.compose.viewModel
 import nz.ac.uclive.jis48.timescribe.R
+import nz.ac.uclive.jis48.timescribe.data.Settings
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
 import nz.ac.uclive.jis48.timescribe.models.TimerViewModel
 import nz.ac.uclive.jis48.timescribe.models.TimerViewModelFactory
-import nz.ac.uclive.jis48.timescribe.ui.theme.TimeScribeTheme
+import nz.ac.uclive.jis48.timescribe.ui.theme.*
 
 @Composable
-fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel) {
+fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel, darkMode: Boolean) {
     val showDialog = remember { mutableStateOf(false) }
     val showResetDialog = remember { mutableStateOf(false) }
     val currentStateDuration = viewModel.getCurrentStateDuration()
-    val shouldShowDuration = viewModel.getCurrentWorkDuration() > 0 || viewModel.getCurrentBreakDuration() > 0 || viewModel.getCurrentLongBreakDuration() > 0
+    val workDuration = viewModel.getCurrentWorkDuration()
     val progress = viewModel.getProgress()
+
+    val textColor = when (viewModel.timerState.value) {
+        TimerViewModel.TimerState.WORK -> if (darkMode) lightRed else darkRed
+        TimerViewModel.TimerState.BREAK -> if (darkMode) lightBlue else darkBlue
+        TimerViewModel.TimerState.LONG_BREAK -> if (darkMode) darkerLightBlue else darkBlue
+        else -> MaterialTheme.colors.onBackground
+    }
+
     if (showDialog.value) {
         AlertDialog(
             title = { Text(text = "Stop Timer") },
@@ -74,14 +82,15 @@ fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (shouldShowDuration) {
+            if (workDuration != 0) {
                 Text(
                     text = currentStateDuration,
-                    style = MaterialTheme.typography.h6
+                    style = MaterialTheme.typography.h6,
+                    color = textColor
                 )
                 LinearProgressIndicator(
                     progress = progress,
-                    color = Color(ContextCompat.getColor(LocalContext.current, R.color.gentle_orange))
+                    color = Color(ContextCompat.getColor(LocalContext.current, R.color.yellow))
                 )
             }
 
@@ -168,6 +177,9 @@ fun ConfirmActionDialog(
 
 
 class TimerFragment : Fragment() {
+    private val timerViewModel: TimerViewModel by viewModels()
+    private val settingsViewModel: SettingsViewModel by viewModels() // Assuming you have a ViewModel for settings
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -175,8 +187,10 @@ class TimerFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
+                val settings by settingsViewModel.settingsFlow.collectAsState(initial = Settings())
+                val darkMode = settings.darkMode
                 TimeScribeTheme {
-                    TimerScreen(PaddingValues(0.dp), viewModel())
+                    TimerScreen(PaddingValues(0.dp), timerViewModel, darkMode)
                 }
             }
         }

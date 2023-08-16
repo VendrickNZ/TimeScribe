@@ -2,9 +2,15 @@ package nz.ac.uclive.jis48.timescribe.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+val lightRed = Color(0xFFf23743)
+val darkRed = Color(0xFFbf0710)
+val lightBlue = Color(0xFF73dcf9)
+val darkerLightBlue = Color(0xFF09addb)
+val darkBlue = Color(0xFF440ec8)
+
 val softBlue = Color(0xFF0077CC)
-val gentleOrange = Color(0xFFFFAA00)
-val darkBlue = Color(0xFF005599)
+val yellow = Color(0xFFe6ff22)
+val darkerBlue = Color(0xFF005599)
 val lightPurple = Color(0xffad39f1)
 var darkPurple = Color(0xFF3700B3)
 val teal = Color(0xFF03DAC6)

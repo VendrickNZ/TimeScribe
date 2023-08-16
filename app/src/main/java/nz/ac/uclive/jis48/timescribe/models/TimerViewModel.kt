@@ -167,7 +167,8 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
     }
 
     fun getProgress(): Float {
-        val totalDuration = when (timerState.value) {
+        val displayState = if (timerState.value == TimerState.IDLE && timeElapsedState != 0) lastNonIdleState else timerState.value
+        val totalDuration = when (displayState) {
             TimerState.WORK -> settings.value.workDuration * 60
             TimerState.BREAK -> settings.value.breakDuration * 60
             TimerState.LONG_BREAK -> settings.value.longBreakDuration * 60
@@ -178,7 +179,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
 
     fun getCurrentStateDuration(): String {
         val displayState = if (timerState.value == TimerState.IDLE && timeElapsedState != 0) lastNonIdleState else timerState.value
-                return when (displayState) {
+        return when (displayState) {
             TimerState.WORK -> "Work: ${settings.value.workDuration} mins"
             TimerState.BREAK -> "Break: ${settings.value.breakDuration} mins"
             TimerState.LONG_BREAK -> "Long Break: ${settings.value.longBreakDuration} mins"

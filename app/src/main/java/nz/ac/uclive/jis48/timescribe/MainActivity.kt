@@ -105,7 +105,8 @@ class MainActivity : ComponentActivity() {
         { paddingValues ->
             NavHost(navController, startDestination = "Timer") {
                 composable(TIMER_ROUTE) {
-                    TimerScreen(paddingValues, timerViewModel)
+                    val settings by settingsViewModel.settingsFlow.collectAsState(initial = Settings())
+                    TimerScreen(paddingValues, timerViewModel, settings.darkMode)
                 }
                 composable(HISTORY_ROUTE) {
                     HistoryScreen(paddingValues, historyViewModel)

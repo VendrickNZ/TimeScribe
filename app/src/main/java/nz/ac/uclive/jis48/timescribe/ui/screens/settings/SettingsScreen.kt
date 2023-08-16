@@ -98,7 +98,7 @@ fun PomodoroWorkDuration(workDuration: Int, onUpdateWorkDuration: (Int) -> Unit)
                 modifier = Modifier.clickable { expanded.value = true }
             )
             DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }) {
-                val commonDurations = listOf(20, 25, 50, 55, 120)
+                val commonDurations = listOf(0, 20, 25, 50, 55, 120)
                 commonDurations.forEach { duration ->
                     DropdownMenuItem(onClick = {
                         onUpdateWorkDuration(duration)
@@ -159,7 +159,7 @@ fun PomodoroBreakDuration(breakDuration: Int, onUpdateBreakDuration: (Int) -> Un
                 modifier = Modifier.clickable { expanded.value = true }
             )
             DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }) {
-                val commonDurations = listOf(5, 10, 15, 20)
+                val commonDurations = listOf(5, 10, 15, 20, 30)
                 commonDurations.forEach { duration ->
                     DropdownMenuItem(onClick = {
                         onUpdateBreakDuration(duration)
@@ -219,7 +219,7 @@ fun PomodoroLongBreakDuration(longBreakDuration: Int, onUpdateLongBreakDuration:
                 modifier = Modifier.clickable { expanded.value = true }
             )
             DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }) {
-                val commonDurations = listOf(15, 20, 30)
+                val commonDurations = listOf(30, 60, 90, 120)
                 commonDurations.forEach { duration ->
                     DropdownMenuItem(onClick = {
                         onUpdateLongBreakDuration(duration)
@@ -279,7 +279,7 @@ fun PomodoroCyclesBeforeLongBreak(cyclesBeforeLongBreak: Int, onUpdateCyclesBefo
                 modifier = Modifier.clickable { expanded.value = true }
             )
             DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }) {
-                val commonCycles = listOf(3, 4, 5)
+                val commonCycles = listOf(2, 3, 4)
                 commonCycles.forEach { cycles ->
                     DropdownMenuItem(onClick = {
                         onUpdateCyclesBeforeLongBreak(cycles)
