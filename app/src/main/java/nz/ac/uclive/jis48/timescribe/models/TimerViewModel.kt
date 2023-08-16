@@ -1,19 +1,17 @@
 package nz.ac.uclive.jis48.timescribe.models
 
+import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import nz.ac.uclive.jis48.timescribe.data.Session
-import nz.ac.uclive.jis48.timescribe.data.Settings
-import nz.ac.uclive.jis48.timescribe.data.TimerRepository
+import nz.ac.uclive.jis48.timescribe.data.*
 import java.util.*
 
 class TimerViewModel(private val settingsViewModel: SettingsViewModel,
@@ -29,6 +27,8 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
     var timerState: MutableState<TimerState> = mutableStateOf(TimerState.IDLE)
     private val settings: MutableState<Settings> = mutableStateOf(Settings())
     private var currentCycle: Int = 0
+    val timeIsOverEvent = MutableLiveData<Boolean>()
+
 
     private var startDate: Date? = null
     private var endDate: Date? = null
@@ -63,6 +63,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                         if (settings.value.workDuration == 0 || timeElapsed.value < settings.value.workDuration * 60) {
                             timeElapsed.value += 1
                         } else {
+                            timeIsOverEvent.value = true
                             currentCycle++
                             if (currentCycle == settings.value.cyclesBeforeLongBreak) {
                                 timerState.value = TimerState.LONG_BREAK
@@ -77,6 +78,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                         if (settings.value.breakDuration == 0 || timeElapsed.value < settings.value.breakDuration * 60) {
                             timeElapsed.value += 1
                         } else {
+                            timeIsOverEvent.value = true
                             timerState.value = TimerState.WORK
                             timeElapsed.value = 0
                         }
@@ -85,6 +87,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                         if (settings.value.longBreakDuration == 0 || timeElapsed.value < settings.value.longBreakDuration * 60) {
                             timeElapsed.value += 1
                         } else {
+                            timeIsOverEvent.value = true
                             timerState.value = TimerState.WORK
                             timeElapsed.value = 0
                         }
@@ -138,6 +141,17 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         saveSession()
     }
 
+    fun timeIsOverHandled() {
+        timeIsOverEvent.value = false
+    }
+
+    fun notifyTimeIsOver(context: Context) {
+        val intent = Intent(context, TimerService::class.java).apply {
+            action = ACTION_NOTIFY_TIME_IS_OVER
+        }
+        context.startService(intent)
+    }
+
 
     private fun saveSession() {
         val session = Session(
@@ -189,14 +203,6 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
 
     fun getCurrentWorkDuration(): Int {
         return settings.value.workDuration
-    }
-
-    fun getCurrentBreakDuration(): Int {
-        return settings.value.breakDuration
-    }
-
-    fun getCurrentLongBreakDuration(): Int {
-        return settings.value.longBreakDuration
     }
 }
 

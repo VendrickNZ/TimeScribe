@@ -6,5 +6,6 @@ data class Session(
     val startDate: Date,
     val endDate: Date,
     val pauseCount: Int,
-    val totalPauseDuration: Long
+    val totalPauseDuration: Long,
+    val pauseIntervals: List<Pair<Date, Date>> = listOf()
 )

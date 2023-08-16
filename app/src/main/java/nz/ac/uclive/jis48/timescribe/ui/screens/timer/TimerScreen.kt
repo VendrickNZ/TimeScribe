@@ -1,15 +1,11 @@
 package nz.ac.uclive.jis48.timescribe.ui.screens.timer
 
-import android.content.Context
-import android.content.ContextWrapper
+import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
@@ -19,7 +15,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.progressSemantics
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,17 +23,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.viewmodel.compose.viewModel
 import nz.ac.uclive.jis48.timescribe.R
 import nz.ac.uclive.jis48.timescribe.data.Settings
+import nz.ac.uclive.jis48.timescribe.data.TimerService
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
 import nz.ac.uclive.jis48.timescribe.models.TimerViewModel
-import nz.ac.uclive.jis48.timescribe.models.TimerViewModelFactory
 import nz.ac.uclive.jis48.timescribe.ui.theme.*
 
 @Composable
@@ -192,6 +184,16 @@ class TimerFragment : Fragment() {
                 TimeScribeTheme {
                     TimerScreen(PaddingValues(0.dp), timerViewModel, darkMode)
                 }
+            }
+        }
+    }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        timerViewModel.timeIsOverEvent.observe(viewLifecycleOwner) { isTimeOver ->
+            if (isTimeOver) {
+                timerViewModel.notifyTimeIsOver(requireContext())
+                timerViewModel.timeIsOverHandled()
             }
         }
     }

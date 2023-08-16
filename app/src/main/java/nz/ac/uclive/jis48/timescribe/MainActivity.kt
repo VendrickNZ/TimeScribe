@@ -1,5 +1,9 @@
 package nz.ac.uclive.jis48.timescribe
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -7,16 +11,14 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import nz.ac.uclive.jis48.timescribe.data.ScreenItem
-import nz.ac.uclive.jis48.timescribe.data.Settings
-import nz.ac.uclive.jis48.timescribe.data.SettingsRepository
-import nz.ac.uclive.jis48.timescribe.data.TimerRepository
+import nz.ac.uclive.jis48.timescribe.data.*
 import nz.ac.uclive.jis48.timescribe.models.HistoryViewModel
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModelFactory
@@ -30,9 +32,12 @@ const val TIMER_ROUTE = "Timer"
 const val HISTORY_ROUTE = "History"
 const val SETTINGS_ROUTE = "Settings"
 
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        createNotificationChannel()
+
 
         // I apologize to all who hath eyes
         val settingsRepository = SettingsRepository(context = this)
@@ -58,12 +63,34 @@ class MainActivity : ComponentActivity() {
             }
         )[HistoryViewModel::class.java]
 
+        timerViewModel.timeIsOverEvent.observe(this) { isOver ->
+            if (isOver) {
+                val intent = Intent(this, TimerService::class.java).apply {
+                    action = ACTION_NOTIFY_TIME_IS_OVER
+                }
+                ContextCompat.startForegroundService(this, intent)
+                timerViewModel.timeIsOverEvent.value = false
+            }
+        }
+
+
         setContent {
             val settings by settingsViewModel.settingsFlow.collectAsState(initial = Settings())
             TimeScribeTheme (darkModeState = settings.darkMode) {
                 MainScreen(timerViewModel, settingsViewModel, historyViewModel)
             }
         }
+    }
+
+    private fun createNotificationChannel() {
+        val name = getString(R.string.channel_name)
+        val descriptionText = getString(R.string.channel_description)
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
+            description = descriptionText
+        }
+        val notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 
     @Composable
@@ -116,5 +143,9 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        const val CHANNEL_ID = "timescribe_channel"
     }
 }

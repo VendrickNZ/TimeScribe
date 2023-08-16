@@ -18,4 +18,6 @@
     <string name="dark_mode_label">ダークモード</string>
     <string name="custom_label">カスタム</string>
     <string name="custom_value_label">カスタム値</string>
+    <string name="channel_name">Notification Channel</string>
+    <string name="channel_description">Notification Description</string>
 </resources>
