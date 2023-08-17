@@ -82,7 +82,7 @@ fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel, darkMod
                 )
                 LinearProgressIndicator(
                     progress = progress,
-                    color = Color(ContextCompat.getColor(LocalContext.current, R.color.yellow))
+                    color = textColor
                 )
             }
 
