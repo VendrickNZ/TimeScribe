@@ -10,7 +10,6 @@ import nz.ac.uclive.jis48.timescribe.data.TimerService
 
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("AlarmReceiver", "Alarm received!")
         val serviceIntent = Intent(context, TimerService::class.java)
         serviceIntent.action = ACTION_NOTIFY_TIME_IS_OVER
         ContextCompat.startForegroundService(context, serviceIntent)

@@ -1,5 +1,6 @@
 package nz.ac.uclive.jis48.timescribe.ui.screens.settings
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -8,8 +9,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +21,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import nz.ac.uclive.jis48.timescribe.ui.theme.TimeScribeTheme
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -31,6 +35,8 @@ import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel) {
     val settings by viewModel.settingsFlow.collectAsState(initial = Settings())
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     val updateWorkDuration: (Int) -> Unit = { newDuration ->
         val newSettings = settings.copy(workDuration = newDuration)
@@ -57,11 +63,17 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
         viewModel.saveSettings(newSettings)
     }
 
-
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .let { if (isLandscape) it.padding(horizontal = 60.dp) else it }
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
         Text(
             text = stringResource(R.string.pomodoro_settings_label),
-            style = MaterialTheme.typography.h6
+            style = MaterialTheme.typography.h6,
+            modifier = if (isLandscape) Modifier.align(Alignment.CenterHorizontally) else Modifier
         )
         PomodoroWorkDuration(workDuration = settings.workDuration, onUpdateWorkDuration = updateWorkDuration)
         PomodoroBreakDuration(breakDuration = settings.breakDuration, onUpdateBreakDuration = updateBreakDuration)
@@ -70,9 +82,11 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.other_label),
-            style = MaterialTheme.typography.h6
+            style = MaterialTheme.typography.h6,
+            modifier = if (isLandscape) Modifier.align(Alignment.CenterHorizontally) else Modifier
         )
         DarkModeSetting(darkModeState = settings.darkMode, onUpdateDarkMode = updateDarkMode)
+        Spacer(Modifier.height(32.dp))
     }
 }
 

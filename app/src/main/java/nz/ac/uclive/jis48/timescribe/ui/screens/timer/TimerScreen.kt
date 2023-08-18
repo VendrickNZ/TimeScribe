@@ -6,6 +6,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
@@ -59,6 +60,7 @@ fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel, darkMod
                 Button(onClick = {
                     viewModel.stopTimer(context)
                     showDialog.value = false
+                    Toast.makeText(context, "Session saved!", Toast.LENGTH_SHORT).show()
                 }) {
                     Text(text = stringResource(R.string.yes_label))
                 }

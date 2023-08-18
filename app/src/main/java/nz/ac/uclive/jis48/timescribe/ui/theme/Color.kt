@@ -9,7 +9,6 @@ val darkerLightBlue = Color(0xFF09addb)
 val darkBlue = Color(0xFF440ec8)
 val green = Color(0xFF00C853)
 val darkGreen = Color(0xFF007E33)
-
 val softBlue = Color(0xFF0077CC)
 val yellow = Color(0xFFe6ff22)
 val darkerBlue = Color(0xFF005599)
