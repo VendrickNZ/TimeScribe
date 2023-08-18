@@ -31,7 +31,6 @@ import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel) {
     val settings by viewModel.settingsFlow.collectAsState(initial = Settings())
-    Log.d("SettingsScreen", "Observed settings: $settings")
 
     val updateWorkDuration: (Int) -> Unit = { newDuration ->
         val newSettings = settings.copy(workDuration = newDuration)
@@ -326,7 +325,7 @@ fun DarkModeSetting(darkModeState: Boolean, onUpdateDarkMode: (Boolean) -> Unit 
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = "Dark Mode")
+        Text(text = stringResource(R.string.dark_mode_label))
         Switch(checked = darkModeState, onCheckedChange = { onUpdateDarkMode(it) })
     }
 }

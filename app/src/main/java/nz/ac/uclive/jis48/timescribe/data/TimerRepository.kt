@@ -6,6 +6,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.*
 
 class TimerRepository(private val context: Context) {
 
@@ -41,6 +42,15 @@ class TimerRepository(private val context: Context) {
         val allSessions = loadSessions()
         return allSessions.filter {
             it.startDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate() == LocalDate.now()
+        }
+    }
+
+    fun loadSessionsForDate(selectedDate: Date): List<Session> {
+        val allSessions = loadSessions()
+        return allSessions.filter {
+            val sessionDate = it.startDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+            val targetDate = selectedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+            sessionDate == targetDate
         }
     }
 

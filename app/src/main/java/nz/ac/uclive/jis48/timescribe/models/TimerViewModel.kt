@@ -1,7 +1,10 @@
 package nz.ac.uclive.jis48.timescribe.models
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -12,6 +15,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import nz.ac.uclive.jis48.timescribe.data.*
+import nz.ac.uclive.jis48.timescribe.utils.AlarmReceiver
 import java.util.*
 
 class TimerViewModel(private val settingsViewModel: SettingsViewModel,
@@ -19,7 +23,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
 ) : ViewModel() {
 
     enum class TimerState {
-        IDLE, WORK, BREAK, LONG_BREAK
+        IDLE, WORK, BREAK, LONG_BREAK, WAITING_FOR_USER
     }
 
     private var startTime: Long = 0
@@ -29,6 +33,8 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
     private val settings: MutableState<Settings> = mutableStateOf(Settings())
     private var currentCycle: Int = 0
     val timeIsOverEvent = MutableLiveData<Boolean>()
+    var nextState: TimerState? = null
+
 
 
     private var startDate: Date? = null
@@ -55,14 +61,20 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
     val timeElapsedState: Int
         get() = timeElapsed.value
 
-    fun startTimer() {
+    fun startTimer(context: Context) {
         if (timerState.value != TimerState.IDLE) return
+        val notifyTimeInMillis = System.currentTimeMillis() + (settings.value.workDuration * 60 * 1000)
+        scheduleAlarm(context, notifyTimeInMillis)
         startTime = System.currentTimeMillis()
         startDate = Date()
         timerState.value = TimerState.WORK
         lastNonIdleState = timerState.value
         timerJob = viewModelScope.launch {
             while (true) {
+                if (timerState.value == TimerState.WAITING_FOR_USER) {
+                    delay(1000)
+                    continue
+                }
                 val elapsedTime = (System.currentTimeMillis() - startTime - totalPauseDuration) / 1000
                 when (timerState.value) {
                     TimerState.WORK -> {
@@ -71,22 +83,30 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                         } else {
                             totalWorkDuration += elapsedTime
                             timeIsOverEvent.value = true
+                            nextState = if (currentCycle == settings.value.cyclesBeforeLongBreak) TimerState.LONG_BREAK else TimerState.BREAK
+                            timerState.value = TimerState.WAITING_FOR_USER
                             currentCycle++
-                            if (currentCycle == settings.value.cyclesBeforeLongBreak) {
-                                timerState.value = TimerState.LONG_BREAK
-                                currentCycle = 0
-                            } else {
-                                timerState.value = TimerState.BREAK
-                            }
                             timeElapsed.value = 0
+                            startTime = System.currentTimeMillis()
+                            nextState = if (currentCycle == settings.value.cyclesBeforeLongBreak) {
+                                TimerState.LONG_BREAK
+                            } else {
+                                TimerState.BREAK
+                            }
+                            timerState.value = TimerState.WAITING_FOR_USER
+                            currentCycle++
+                            timeElapsed.value = 0
+                            startTime = System.currentTimeMillis()
+
                         }
                     }
                     TimerState.BREAK -> {
                         if (settings.value.breakDuration == 0 || elapsedTime < settings.value.breakDuration * 60) {
                             timeElapsed.value = elapsedTime.toInt()
                         } else {
+                            nextState = TimerState.WORK
+                            timerState.value = TimerState.WAITING_FOR_USER
                             timeIsOverEvent.value = true
-                            timerState.value = TimerState.WORK
                             timeElapsed.value = 0
                         }
                     }
@@ -94,8 +114,9 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                         if (settings.value.longBreakDuration == 0 || elapsedTime < settings.value.longBreakDuration * 60) {
                             timeElapsed.value = elapsedTime.toInt()
                         } else {
+                            nextState = TimerState.WORK
+                            timerState.value = TimerState.WAITING_FOR_USER
                             timeIsOverEvent.value = true
-                            timerState.value = TimerState.WORK
                             timeElapsed.value = 0
                         }
                     }
@@ -107,16 +128,21 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
     }
 
 
-    fun pauseTimer() {
+    fun pauseTimer(context: Context) {
         if (timerState.value == TimerState.WORK || timerState.value == TimerState.BREAK || timerState.value == TimerState.LONG_BREAK) {
+            cancelAlarm(context)
             lastNonIdleState = timerState.value
             pauseStartTime = Date()
             timerState.value = TimerState.IDLE
         }
     }
 
-    fun resumeTimer() {
+
+    fun resumeTimer(context: Context) {
         if (timerState.value == TimerState.IDLE) {
+            val remainingTime = (settings.value.workDuration * 60 - timeElapsed.value) * 1000
+            val notifyTimeInMillis = System.currentTimeMillis() + remainingTime
+            scheduleAlarm(context, notifyTimeInMillis)
             pauseStartTime?.let {
                 val pauseEndTime = Date()
                 pauseIntervals.add(it to pauseEndTime)
@@ -126,7 +152,8 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         }
     }
 
-    fun resetTimer() {
+    fun resetTimer(context: Context) {
+        cancelAlarm(context)
         if (timerState.value == TimerState.IDLE) {
             totalPauseDuration = 0
             pauseStartTime = null
@@ -134,10 +161,12 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
             timerJob = null
             timeElapsed.value = 0
             timerState.value = TimerState.IDLE
+            currentCycle = 0
         }
     }
 
-    fun stopTimer() {
+    fun stopTimer(context: Context) {
+        cancelAlarm(context)
         if (timerState.value == TimerState.IDLE) {
             pauseStartTime?.let {
                 val pauseEndTime = Date()
@@ -156,6 +185,24 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         timerState.value = TimerState.IDLE
         currentCycle = 0
     }
+
+    fun scheduleAlarm(context: Context, timeInMillis: Long) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, AlarmReceiver::class.java)
+        intent.action = "nz.ac.uclive.jis48.timescribe.ALARM_ACTION"
+        val flags = PendingIntent.FLAG_IMMUTABLE
+        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, flags)
+        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent)
+    }
+
+    fun cancelAlarm(context: Context) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, AlarmReceiver::class.java)
+        val flags = PendingIntent.FLAG_IMMUTABLE
+        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, flags)
+        alarmManager.cancel(pendingIntent)
+    }
+
 
     fun timeIsOverHandled() {
         timeIsOverEvent.value = false
@@ -222,5 +269,23 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
     fun getCurrentWorkDuration(): Int {
         return settings.value.workDuration
     }
+
+    fun determineNextState(): TimerState {
+        return when (timerState.value) {
+            TimerState.WORK -> TimerState.BREAK
+            TimerState.BREAK -> TimerState.WORK
+            TimerState.LONG_BREAK -> TimerState.WORK
+            TimerState.WAITING_FOR_USER -> TimerState.IDLE
+            else -> TimerState.IDLE
+        }
+    }
+
+    fun continueToNextState() {
+        startTime = System.currentTimeMillis()
+        timerState.value = nextState ?: TimerState.IDLE
+        nextState = null
+    }
+
+
 }
 

@@ -35,8 +35,10 @@ import nz.ac.uclive.jis48.timescribe.ui.theme.*
 
 @Composable
 fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel, darkMode: Boolean) {
+    val context = LocalContext.current
     val showDialog = remember { mutableStateOf(false) }
     val showResetDialog = remember { mutableStateOf(false) }
+    val showConfirmTransitionDialog = remember { mutableStateOf(false) }
     val currentStateDuration = viewModel.getCurrentStateDuration()
     val workDuration = viewModel.getCurrentWorkDuration()
     val progress = viewModel.getProgress()
@@ -50,20 +52,20 @@ fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel, darkMod
 
     if (showDialog.value) {
         AlertDialog(
-            title = { Text(text = "Stop Timer") },
-            text = { Text(text = "Are you sure you want to stop the timer?") },
+            title = { Text(text = stringResource(R.string.stop_timer_label)) },
+            text = { Text(text = stringResource(R.string.are_you_sure_stop_timer_label)) },
             onDismissRequest = { showDialog.value = false },
             confirmButton = {
                 Button(onClick = {
-                    viewModel.stopTimer()
+                    viewModel.stopTimer(context)
                     showDialog.value = false
                 }) {
-                    Text(text = "Yes")
+                    Text(text = stringResource(R.string.yes_label))
                 }
             },
             dismissButton = {
                 Button(onClick = { showDialog.value = false }) {
-                    Text(text = "No")
+                    Text(text = stringResource(R.string.no_label))
                 }
             }
         )
@@ -96,40 +98,66 @@ fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel, darkMod
                 horizontalArrangement = Arrangement.Center
             ) {
                 when (viewModel.timerState.value) {
+                    TimerViewModel.TimerState.WAITING_FOR_USER -> {
+                        Button(onClick = { viewModel.continueToNextState() }) {
+                            Text(text = "Click to Continue")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Button(onClick = { showResetDialog.value = true }) {
+                            Text(text = stringResource(R.string.reset_button))
+                        }
+                        if (showResetDialog.value) {
+                            ConfirmActionDialog(
+                                title = stringResource(R.string.reset_timer_label),
+                                message = stringResource(R.string.are_you_sure_reset_timer_label),
+                                onConfirm = { viewModel.resetTimer(context) },
+                                onDismiss = { showResetDialog.value = false }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Button(onClick = { showDialog.value = true }) {
+                            Text(text = stringResource(R.string.stop_button))
+                        }
+                    }
                     TimerViewModel.TimerState.IDLE -> {
                         if (viewModel.timeElapsedState == 0) {
-                            Button(onClick = { viewModel.startTimer() }) {
+                            Button(onClick = { viewModel.startTimer(context) }) {
                                 Text(text = stringResource(R.string.start_button))
                             }
                         } else {
-                            Button(onClick = { viewModel.resumeTimer() },
-                            modifier = Modifier.width(125.dp)
-                            ){
+                            Button(
+                                onClick = { viewModel.resumeTimer(context) },
+                                modifier = Modifier.width(125.dp)
+                            ) {
                                 Text(text = stringResource(R.string.resume_button))
                             }
-                            Spacer(modifier = Modifier.width(35.dp))
+                            Spacer(modifier = Modifier.width(8.dp)) // Adding a space between buttons
 
                             Button(onClick = { showResetDialog.value = true }) {
                                 Text(text = stringResource(R.string.reset_button))
                             }
                             if (showResetDialog.value) {
                                 ConfirmActionDialog(
-                                    title = "Reset Timer",
-                                    message = "Are you sure you want to reset the timer?",
-                                    onConfirm = { viewModel.resetTimer() },
+                                    title = stringResource(R.string.reset_timer_label),
+                                    message = stringResource(R.string.are_you_sure_reset_timer_label),
+                                    onConfirm = { viewModel.resetTimer(context) },
                                     onDismiss = { showResetDialog.value = false }
                                 )
                             }
 
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(8.dp)) // Adding a space between buttons
 
                             Button(onClick = { showDialog.value = true }) {
                                 Text(text = stringResource(R.string.stop_button))
                             }
                         }
                     }
+
                     TimerViewModel.TimerState.WORK, TimerViewModel.TimerState.BREAK, TimerViewModel.TimerState.LONG_BREAK -> {
-                        Button(onClick = { viewModel.pauseTimer() }) {
+                        Button(onClick = { viewModel.pauseTimer(context) }) {
                             Text(text = stringResource(R.string.pause_button))
                         }
                     }
@@ -156,12 +184,12 @@ fun ConfirmActionDialog(
                 onConfirm()
                 onDismiss()
             }) {
-                Text(text = "Yes")
+                Text(text = stringResource(R.string.yes_label))
             }
         },
         dismissButton = {
             Button(onClick = { onDismiss() }) {
-                Text(text = "No")
+                Text(text = stringResource(R.string.no_label))
             }
         }
     )

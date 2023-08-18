@@ -20,4 +20,23 @@
     <string name="custom_value_label">Custom</string>
     <string name="channel_name">Notification Channel</string>
     <string name="channel_description">Notification Description</string>
+    <string name="stop_timer_label">Stop Timer</string>
+    <string name="reset_timer_label">Reset Timer</string>
+    <string name="are_you_sure_reset_timer_label">Are you sure you want to reset the timer?</string>
+    <string name="are_you_sure_stop_timer_label">Are you sure you want to stop the timer?</string>
+    <string name="yes_label">Yes</string>
+    <string name="no_label">No</string>
+    <string name="pause_count_label">Pause Count: </string>
+    <string name="total_pause_duration_label">Total Pause Duration: </string>
+    <string name="paused_from_label">Paused from </string>
+    <string name="to_label"> to </string>
+    <string name="sun_label"> Sun </string>
+    <string name="mon_label"> Mon </string>
+    <string name="tue_label"> Tue </string>
+    <string name="wed_label"> Wed </string>
+    <string name="thu_label"> Thu </string>
+    <string name="fri_label"> Fri </string>
+    <string name="sat_label"> Sat </string>
+
+
 </resources>

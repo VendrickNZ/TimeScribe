@@ -136,7 +136,7 @@ class MainActivity : ComponentActivity() {
                     TimerScreen(paddingValues, timerViewModel, settings.darkMode)
                 }
                 composable(HISTORY_ROUTE) {
-                    HistoryScreen(paddingValues, historyViewModel)
+                    HistoryScreen(paddingValues, historyViewModel, settingsViewModel)
                 }
                 composable(SETTINGS_ROUTE) {
                     SettingsScreen(settingsViewModel)
