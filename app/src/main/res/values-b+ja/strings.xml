@@ -37,4 +37,7 @@
     <string name="thu_label"> 木 </string>
     <string name="fri_label"> 金 </string>
     <string name="sat_label"> 土 </string>
+    <string name="session_saved_toast_label">セッションが保存されました！</string>
+    <string name="start_label">スタート</string>
+
 </resources>

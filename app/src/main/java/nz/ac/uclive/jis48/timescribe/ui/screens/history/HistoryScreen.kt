@@ -1,5 +1,8 @@
 package nz.ac.uclive.jis48.timescribe.ui.screens.history
 
+import android.content.Context
+import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -10,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.Button
 import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -24,28 +28,37 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
+import androidx.core.content.ContextCompat.startActivity
 import nz.ac.uclive.jis48.timescribe.R
+import nz.ac.uclive.jis48.timescribe.data.Session
 import nz.ac.uclive.jis48.timescribe.data.Settings
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
 import nz.ac.uclive.jis48.timescribe.ui.theme.*
 
 @Composable
-fun HistoryScreen(paddingValues: PaddingValues, historyViewModel: HistoryViewModel, settingsViewModel: SettingsViewModel) {
+fun HistoryScreen(paddingValues: PaddingValues, historyViewModel: HistoryViewModel, settingsViewModel: SettingsViewModel, onShareSession: (Session) -> Unit) {
     val timeFormatter = SimpleDateFormat("h:mma", Locale.getDefault())
     val selectedDate = remember { mutableStateOf(Date()) }
     val selectedSessions by historyViewModel.selectedSessions.observeAsState(initial = emptyList())
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val dateStyle = if (isLandscape) MaterialTheme.typography.h4 else MaterialTheme.typography.h5
+    val datePadding = if (isLandscape) 1.dp else 8.dp
+    val dayPadding = if (isLandscape) 16.dp else 8.dp
 
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(text = SimpleDateFormat("EEEE d MMMM", Locale.getDefault()).format(selectedDate.value),
-            style = MaterialTheme.typography.h5,
-            modifier = Modifier.padding(8.dp)
+            style = dateStyle,
+            modifier = Modifier.padding(datePadding)
         )
         Modifier.padding(8.dp)
-        WeeklyCalendar(selectedDate = selectedDate.value, settingsViewModel = settingsViewModel) { date ->
+        WeeklyCalendar(selectedDate = selectedDate.value, dayPadding, settingsViewModel = settingsViewModel) { date ->
             selectedDate.value = date
             historyViewModel.loadSessionsForDate(date)
         }
@@ -76,19 +89,24 @@ fun HistoryScreen(paddingValues: PaddingValues, historyViewModel: HistoryViewMod
 
                         if (expanded.value) {
                             Text(
-                                text = stringResource(R.string.pause_count_label)  +  "${session.pauseCount}",
+                                text = stringResource(R.string.pause_count_label)  +  " ${session.pauseCount}",
                                 style = MaterialTheme.typography.body2
                             )
+                            val totalPauseDurationInSeconds = session.totalPauseDuration / 1000
                             Text(
-                                text = stringResource(R.string.total_pause_duration_label) + "${session.totalPauseDuration}ms",
+                                text = stringResource(R.string.total_pause_duration_label) + " ${totalPauseDurationInSeconds}s",
                                 style = MaterialTheme.typography.body2
                             )
 
                             session.pauseIntervals.forEach { interval ->
                                 Text(
-                                    text = stringResource(R.string.paused_from_label) + timeFormatter.format(interval.first) + stringResource(R.string.to_label) + timeFormatter.format(interval.second),
+                                    text = stringResource(R.string.paused_from_label) + " " + timeFormatter.format(interval.first) + " "
+                                            + stringResource(R.string.to_label) + " " +  timeFormatter.format(interval.second),
                                     style = MaterialTheme.typography.body2
                                 )
+                            }
+                            Button(onClick = { onShareSession(session) }) {
+                                Text("Share")
                             }
                         }
                     }
@@ -99,7 +117,7 @@ fun HistoryScreen(paddingValues: PaddingValues, historyViewModel: HistoryViewMod
 }
 
 @Composable
-fun WeeklyCalendar(selectedDate: Date, settingsViewModel: SettingsViewModel, onSelectDate: (Date) -> Unit) {
+fun WeeklyCalendar(selectedDate: Date, dayPadding: Dp, settingsViewModel: SettingsViewModel, onSelectDate: (Date) -> Unit) {
     val currentCalendar = Calendar.getInstance()
     val selectedCalendar = Calendar.getInstance().apply {
         time = selectedDate
@@ -107,7 +125,7 @@ fun WeeklyCalendar(selectedDate: Date, settingsViewModel: SettingsViewModel, onS
         set(Calendar.DAY_OF_WEEK, firstDayOfWeek)
     }
 
-    selectedCalendar.add(Calendar.DAY_OF_MONTH, -selectedCalendar.get(Calendar.DAY_OF_WEEK) + selectedCalendar.firstDayOfWeek)
+    selectedCalendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
 
     val daysOfWeek = listOf(
         R.string.mon_label,
@@ -142,10 +160,10 @@ fun WeeklyCalendar(selectedDate: Date, settingsViewModel: SettingsViewModel, onS
             Box(
                 modifier = Modifier
                     .clickable(enabled = isClickable) { if (isClickable) onSelectDate(dayCalendar.time) }
-                    .padding(8.dp)
+                    .padding(dayPadding)
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = stringResource(daysOfWeek[(i + 5) % 7]), color = textColor)
+                    Text(text = stringResource(daysOfWeek[i]), color = textColor)
                     Text(text = "$dayOfMonth", color = textColor)
                 }
             }
@@ -155,6 +173,22 @@ fun WeeklyCalendar(selectedDate: Date, settingsViewModel: SettingsViewModel, onS
     }
 }
 
+fun shareSession(context: Context, session: Session) {
+    val sessionDetails = """
+        Start Time: ${session.startDate}
+        End Time: ${session.endDate}
+        Pause Count: ${session.pauseCount}
+        Total Pause Duration: ${session.totalPauseDuration / 1000}s
+        // Add more details as needed
+    """.trimIndent()
+
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_SUBJECT, "Session Details")
+        putExtra(Intent.EXTRA_TEXT, sessionDetails)
+    }
+    context.startActivity(Intent.createChooser(shareIntent, "Share Session via"))
+}
 
 
 class HistoryFragment(val historyViewModel: HistoryViewModel, val settingsViewModel: SettingsViewModel) : Fragment() {
@@ -163,11 +197,20 @@ class HistoryFragment(val historyViewModel: HistoryViewModel, val settingsViewMo
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
         return ComposeView(requireContext()).apply {
             setContent {
                 TimeScribeTheme {
-                    HistoryScreen(paddingValues = PaddingValues(0.dp), historyViewModel = historyViewModel, settingsViewModel = settingsViewModel)
+                    HistoryScreen(
+                        paddingValues = PaddingValues(0.dp),
+                        historyViewModel = historyViewModel,
+                        settingsViewModel = settingsViewModel,
+                        onShareSession = { session ->
+                            shareSession(
+                                requireContext(),
+                                session
+                            )
+                        }
+                    )
                 }
             }
         }

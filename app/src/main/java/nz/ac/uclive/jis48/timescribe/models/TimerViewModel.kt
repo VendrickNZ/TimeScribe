@@ -270,14 +270,8 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         return settings.value.workDuration
     }
 
-    fun determineNextState(): TimerState {
-        return when (timerState.value) {
-            TimerState.WORK -> TimerState.BREAK
-            TimerState.BREAK -> TimerState.WORK
-            TimerState.LONG_BREAK -> TimerState.WORK
-            TimerState.WAITING_FOR_USER -> TimerState.IDLE
-            else -> TimerState.IDLE
-        }
+    fun getCurrentCycle(): Int {
+        return currentCycle
     }
 
     fun continueToNextState() {

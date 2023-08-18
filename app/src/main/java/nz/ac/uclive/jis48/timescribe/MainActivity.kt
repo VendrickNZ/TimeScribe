@@ -27,6 +27,7 @@ import nz.ac.uclive.jis48.timescribe.models.SettingsViewModelFactory
 import nz.ac.uclive.jis48.timescribe.models.TimerViewModel
 import nz.ac.uclive.jis48.timescribe.ui.screens.timer.TimerScreen
 import nz.ac.uclive.jis48.timescribe.ui.screens.history.HistoryScreen
+import nz.ac.uclive.jis48.timescribe.ui.screens.history.shareSession
 import nz.ac.uclive.jis48.timescribe.ui.screens.settings.SettingsScreen
 import nz.ac.uclive.jis48.timescribe.ui.theme.TimeScribeTheme
 
@@ -112,7 +113,7 @@ class MainActivity : ComponentActivity() {
 
         Scaffold(
             bottomBar = {
-                if (currentRoute != TIMER_ROUTE || (currentRoute == TIMER_ROUTE && !isLandscape)) {
+                if (!((currentRoute == TIMER_ROUTE && isLandscape) || (currentRoute == HISTORY_ROUTE && isLandscape))) {
                     BottomNavigation {
                         items.forEach { screenItem ->
                             BottomNavigationItem(
@@ -142,7 +143,12 @@ class MainActivity : ComponentActivity() {
                     TimerScreen(paddingValues, timerViewModel, settings.darkMode)
                 }
                 composable(HISTORY_ROUTE) {
-                    HistoryScreen(paddingValues, historyViewModel, settingsViewModel)
+                    HistoryScreen(
+                        paddingValues = paddingValues,
+                        historyViewModel = historyViewModel,
+                        settingsViewModel = settingsViewModel,
+                        onShareSession = { session -> shareSession(this@MainActivity, session) }
+                    )
                 }
                 composable(SETTINGS_ROUTE) {
                     SettingsScreen(settingsViewModel)
