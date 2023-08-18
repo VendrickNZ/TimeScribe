@@ -1,6 +1,7 @@
 package nz.ac.uclive.jis48.timescribe.ui.screens.timer
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -22,9 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
 import nz.ac.uclive.jis48.timescribe.R
@@ -39,10 +42,11 @@ fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel, darkMod
     val context = LocalContext.current
     val showDialog = remember { mutableStateOf(false) }
     val showResetDialog = remember { mutableStateOf(false) }
-    val showConfirmTransitionDialog = remember { mutableStateOf(false) }
     val currentStateDuration = viewModel.getCurrentStateDuration()
     val workDuration = viewModel.getCurrentWorkDuration()
     val progress = viewModel.getProgress()
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     val textColor = when (viewModel.timerState.value) {
         TimerViewModel.TimerState.WORK -> if (darkMode) lightRed else darkRed
@@ -86,14 +90,15 @@ fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel, darkMod
                 )
                 LinearProgressIndicator(
                     progress = progress,
-                    color = textColor
+                    color = textColor,
+                    modifier = if (isLandscape) Modifier.width(450.dp) else Modifier.width(225.dp)
                 )
             }
 
             Spacer(modifier = Modifier.weight(0.5f))
             Text(
                 text = viewModel.getFormattedTime(),
-                style = MaterialTheme.typography.h1
+                style = if (isLandscape) MaterialTheme.typography.h1.copy(fontSize = 160.sp) else MaterialTheme.typography.h1
             )
             Row(
                 modifier = Modifier.padding(16.dp),
@@ -102,7 +107,13 @@ fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel, darkMod
                 when (viewModel.timerState.value) {
                     TimerViewModel.TimerState.WAITING_FOR_USER -> {
                         Button(onClick = { viewModel.continueToNextState() }) {
-                            Text(text = "Click to Continue")
+                            val startLabel = stringResource(R.string.start_label)
+                            var nextStateLabel = viewModel.nextState.toString()
+                            if (viewModel.nextState == TimerViewModel.TimerState.LONG_BREAK) {
+                                nextStateLabel = "LONG BREAK"
+                            }
+                            val nextText = "$startLabel $nextStateLabel" // e.g. "Start break"
+                            Text(text = nextText)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
 

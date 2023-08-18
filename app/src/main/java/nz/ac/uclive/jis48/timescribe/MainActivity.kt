@@ -4,11 +4,13 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
@@ -103,28 +105,32 @@ class MainActivity : ComponentActivity() {
             ScreenItem(HISTORY_ROUTE, R.string.history_button, R.drawable.history_icon),
             ScreenItem(SETTINGS_ROUTE, R.string.settings_button, R.drawable.settings_icon)
         )
+        val navBackStackEntry = navController.currentBackStackEntryAsState()
+        val currentRoute = navBackStackEntry.value?.destination?.route
+        val configuration = LocalConfiguration.current
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
         Scaffold(
             bottomBar = {
-                BottomNavigation {
-                    val navBackStackEntry = navController.currentBackStackEntryAsState()
-                    val currentRoute = navBackStackEntry.value?.destination?.route
-                    items.forEach { screenItem ->
-                        BottomNavigationItem(
-                            icon = {
-                                Icon(
-                                    painterResource(id = screenItem.iconResId),
-                                    contentDescription = "Navbar Icon"
-                                )
-                            },
-                            label = { Text(stringResource(id = screenItem.labelResId)) },
-                            selected = currentRoute == screenItem.route,
-                            onClick = {
-                                if (currentRoute != screenItem.route) {
-                                    navController.navigate(screenItem.route)
+                if (currentRoute != TIMER_ROUTE || (currentRoute == TIMER_ROUTE && !isLandscape)) {
+                    BottomNavigation {
+                        items.forEach { screenItem ->
+                            BottomNavigationItem(
+                                icon = {
+                                    Icon(
+                                        painterResource(id = screenItem.iconResId),
+                                        contentDescription = "Navbar Icon"
+                                    )
+                                },
+                                label = { Text(stringResource(id = screenItem.labelResId)) },
+                                selected = currentRoute == screenItem.route,
+                                onClick = {
+                                    if (currentRoute != screenItem.route) {
+                                        navController.navigate(screenItem.route)
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }

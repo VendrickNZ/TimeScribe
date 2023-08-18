@@ -24,13 +24,14 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.res.stringResource
+import nz.ac.uclive.jis48.timescribe.R
 import nz.ac.uclive.jis48.timescribe.data.Settings
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
 import nz.ac.uclive.jis48.timescribe.ui.theme.*
 
 @Composable
 fun HistoryScreen(paddingValues: PaddingValues, historyViewModel: HistoryViewModel, settingsViewModel: SettingsViewModel) {
-    val todaySessions = historyViewModel.todaySessions.value
     val timeFormatter = SimpleDateFormat("h:mma", Locale.getDefault())
     val selectedDate = remember { mutableStateOf(Date()) }
     val selectedSessions by historyViewModel.selectedSessions.observeAsState(initial = emptyList())
@@ -75,21 +76,17 @@ fun HistoryScreen(paddingValues: PaddingValues, historyViewModel: HistoryViewMod
 
                         if (expanded.value) {
                             Text(
-                                text = "Pause Count: ${session.pauseCount}",
+                                text = stringResource(R.string.pause_count_label)  +  "${session.pauseCount}",
                                 style = MaterialTheme.typography.body2
                             )
                             Text(
-                                text = "Total Pause Duration: ${session.totalPauseDuration}ms",
+                                text = stringResource(R.string.total_pause_duration_label) + "${session.totalPauseDuration}ms",
                                 style = MaterialTheme.typography.body2
                             )
 
                             session.pauseIntervals.forEach { interval ->
                                 Text(
-                                    text = "Paused from ${timeFormatter.format(interval.first)} to ${
-                                        timeFormatter.format(
-                                            interval.second
-                                        )
-                                    }",
+                                    text = stringResource(R.string.paused_from_label) + timeFormatter.format(interval.first) + stringResource(R.string.to_label) + timeFormatter.format(interval.second),
                                     style = MaterialTheme.typography.body2
                                 )
                             }
@@ -112,14 +109,21 @@ fun WeeklyCalendar(selectedDate: Date, settingsViewModel: SettingsViewModel, onS
 
     selectedCalendar.add(Calendar.DAY_OF_MONTH, -selectedCalendar.get(Calendar.DAY_OF_WEEK) + selectedCalendar.firstDayOfWeek)
 
-    val daysOfWeek = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    val daysOfWeek = listOf(
+        R.string.mon_label,
+        R.string.tue_label,
+        R.string.wed_label,
+        R.string.thu_label,
+        R.string.fri_label,
+        R.string.sat_label,
+        R.string.sun_label
+    )
 
     Row(horizontalArrangement = Arrangement.SpaceEvenly) {
         for (i in 0 until 7) {
             val dayCalendar = selectedCalendar.clone() as Calendar
 
             val dayOfMonth = dayCalendar.get(Calendar.DAY_OF_MONTH)
-            val dayOfWeek = dayCalendar.get(Calendar.DAY_OF_WEEK)
             val isToday = currentCalendar.get(Calendar.DAY_OF_YEAR) == dayCalendar.get(Calendar.DAY_OF_YEAR) &&
                     currentCalendar.get(Calendar.YEAR) == dayCalendar.get(Calendar.YEAR)
 
@@ -141,7 +145,7 @@ fun WeeklyCalendar(selectedDate: Date, settingsViewModel: SettingsViewModel, onS
                     .padding(8.dp)
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = daysOfWeek[(dayOfWeek + 5) % 7], color = textColor)
+                    Text(text = stringResource(daysOfWeek[(i + 5) % 7]), color = textColor)
                     Text(text = "$dayOfMonth", color = textColor)
                 }
             }

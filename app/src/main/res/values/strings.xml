@@ -37,6 +37,10 @@
     <string name="thu_label"> Thu </string>
     <string name="fri_label"> Fri </string>
     <string name="sat_label"> Sat </string>
+    <string name="session_saved_toast_label">Session saved!</string>
+    <string name="start_label">Start </string>
+
+
 
 
 </resources>

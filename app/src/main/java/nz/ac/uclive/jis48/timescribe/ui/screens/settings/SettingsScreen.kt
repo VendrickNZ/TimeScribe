@@ -2,7 +2,6 @@ package nz.ac.uclive.jis48.timescribe.ui.screens.settings
 
 import android.content.res.Configuration
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -26,6 +25,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.fragment.app.viewModels
 import nz.ac.uclive.jis48.timescribe.R
 import nz.ac.uclive.jis48.timescribe.data.Settings
@@ -135,7 +135,8 @@ fun PomodoroWorkDuration(workDuration: Int, onUpdateWorkDuration: (Int) -> Unit)
             value = customValue.value,
             onValueChange = { customValue.value = it },
             label = { Text(text = stringResource(R.string.custom_value_label)) },
-            keyboardOptions = KeyboardOptions.Default.copy(
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
@@ -195,7 +196,8 @@ fun PomodoroBreakDuration(breakDuration: Int, onUpdateBreakDuration: (Int) -> Un
             value = customValue.value,
             onValueChange = { customValue.value = it },
             label = { Text(text = stringResource(R.string.custom_value_label)) },
-            keyboardOptions = KeyboardOptions.Default.copy(
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
@@ -255,7 +257,8 @@ fun PomodoroLongBreakDuration(longBreakDuration: Int, onUpdateLongBreakDuration:
             value = customValue.value,
             onValueChange = { customValue.value = it },
             label = { Text(text = stringResource(R.string.custom_value_label)) },
-            keyboardOptions = KeyboardOptions.Default.copy(
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
@@ -315,7 +318,8 @@ fun PomodoroCyclesBeforeLongBreak(cyclesBeforeLongBreak: Int, onUpdateCyclesBefo
             value = customValue.value,
             onValueChange = { customValue.value = it },
             label = { Text(text = stringResource(R.string.custom_value_label)) },
-            keyboardOptions = KeyboardOptions.Default.copy(
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
