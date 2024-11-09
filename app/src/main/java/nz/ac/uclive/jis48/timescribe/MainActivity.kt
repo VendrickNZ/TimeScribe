@@ -41,7 +41,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         createNotificationChannel()
 
-
         // I apologize to all who hath eyes
         val settingsRepository = SettingsRepository(context = this)
         val settingsViewModel: SettingsViewModel = ViewModelProvider(
