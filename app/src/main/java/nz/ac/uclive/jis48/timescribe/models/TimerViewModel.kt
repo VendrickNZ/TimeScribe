@@ -181,7 +181,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         currentCycle = 0
     }
 
-    fun scheduleAlarm(context: Context, timeInMillis: Long) {
+    private fun scheduleAlarm(context: Context, timeInMillis: Long) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, AlarmReceiver::class.java)
         intent.action = "nz.ac.uclive.jis48.timescribe.ALARM_ACTION"
@@ -198,7 +198,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         }
     }
 
-    fun cancelAlarm(context: Context) {
+    private fun cancelAlarm(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, AlarmReceiver::class.java)
         val flags = PendingIntent.FLAG_IMMUTABLE
@@ -232,7 +232,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         refreshSessions()
     }
 
-    fun refreshSessions() {
+    private fun refreshSessions() {
         sessions.value = timerRepository.loadTodaySessions()
     }
 
@@ -249,8 +249,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
     }
 
     fun getProgress(): Float {
-        val displayState = if (timerState.value == TimerState.IDLE && timeElapsedState != 0) lastNonIdleState else timerState.value
-        val totalDuration = when (displayState) {
+        val totalDuration = when (if (timerState.value == TimerState.IDLE && timeElapsedState != 0) lastNonIdleState else timerState.value) {
             TimerState.WORK -> settings.value.workDuration * 60
             TimerState.BREAK -> settings.value.breakDuration * 60
             TimerState.LONG_BREAK -> settings.value.longBreakDuration * 60
@@ -260,8 +259,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
     }
 
     fun getCurrentStateDuration(): String {
-        val displayState = if (timerState.value == TimerState.IDLE && timeElapsedState != 0) lastNonIdleState else timerState.value
-        return when (displayState) {
+        return when (if (timerState.value == TimerState.IDLE && timeElapsedState != 0) lastNonIdleState else timerState.value) {
             TimerState.WORK -> "Work: ${settings.value.workDuration} mins"
             TimerState.BREAK -> "Break: ${settings.value.breakDuration} mins"
             TimerState.LONG_BREAK -> "Long Break: ${settings.value.longBreakDuration} mins"
@@ -294,7 +292,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                     .setPositiveButton("Open Settings") { _, _ ->
                         // Open app settings
                         val intent = Intent().apply {
-                            action = android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                            action = android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
                             data = android.net.Uri.parse("package:${context.packageName}")
                         }
                         context.startActivity(intent)
