@@ -20,7 +20,6 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import nz.ac.uclive.jis48.timescribe.models.HistoryViewModel
@@ -31,7 +30,6 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
-import androidx.core.content.ContextCompat.startActivity
 import nz.ac.uclive.jis48.timescribe.R
 import nz.ac.uclive.jis48.timescribe.data.Session
 import nz.ac.uclive.jis48.timescribe.data.Settings
@@ -49,6 +47,10 @@ fun HistoryScreen(paddingValues: PaddingValues, historyViewModel: HistoryViewMod
     val datePadding = if (isLandscape) 1.dp else 8.dp
     val dayPadding = if (isLandscape) 16.dp else 8.dp
 
+    LaunchedEffect(Unit) {
+        historyViewModel.loadSessionsForDate(selectedDate.value)
+    }
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -59,9 +61,12 @@ fun HistoryScreen(paddingValues: PaddingValues, historyViewModel: HistoryViewMod
         )
         Modifier.padding(8.dp)
         WeeklyCalendar(selectedDate = selectedDate.value, dayPadding, settingsViewModel = settingsViewModel) { date ->
+            Log.d("HistoryScreen", "Selected date: $date")
             selectedDate.value = date
             historyViewModel.loadSessionsForDate(date)
         }
+        Log.d("HistoryScreen", "Selected date: $selectedDate")
+        Log.d("HistoryScreen", "Selected sessions 2: $selectedSessions")
 
         LazyColumn {
             items(selectedSessions) { session ->
@@ -191,7 +196,7 @@ fun shareSession(context: Context, session: Session) {
 }
 
 
-class HistoryFragment(val historyViewModel: HistoryViewModel, val settingsViewModel: SettingsViewModel) : Fragment() {
+class HistoryFragment(private val historyViewModel: HistoryViewModel, private val settingsViewModel: SettingsViewModel) : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
