@@ -58,6 +58,11 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
         viewModel.saveSettings(newSettings)
     }
 
+    val updateAutoSave: (Boolean) -> Unit = { newSetting ->
+        val newSettings = settings.copy(autoSave = newSetting)
+        viewModel.saveSettings(newSettings)
+    }
+
     val updateDarkMode: (Boolean) -> Unit = { newSetting ->
         val newSettings = settings.copy(darkMode = newSetting)
         viewModel.saveSettings(newSettings)
@@ -85,8 +90,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             style = MaterialTheme.typography.h6,
             modifier = if (isLandscape) Modifier.align(Alignment.CenterHorizontally) else Modifier
         )
+        AutoSaveSetting(autoSaveState = settings.autoSave, onUpdateAutoSave = updateAutoSave)
         DarkModeSetting(darkModeState = settings.darkMode, onUpdateDarkMode = updateDarkMode)
-        Spacer(Modifier.height(32.dp))
     }
 }
 
@@ -336,6 +341,21 @@ fun PomodoroCyclesBeforeLongBreak(cyclesBeforeLongBreak: Int, onUpdateCyclesBefo
 }
 
 @Composable
+fun AutoSaveSetting(autoSaveState: Boolean, onUpdateAutoSave: (Boolean) -> Unit ) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = stringResource(R.string.auto_save_label))
+        Switch(checked = autoSaveState,
+            onCheckedChange = { onUpdateAutoSave(it) },
+            modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
 fun DarkModeSetting(darkModeState: Boolean, onUpdateDarkMode: (Boolean) -> Unit ) {
     Row(
         modifier = Modifier
@@ -344,7 +364,11 @@ fun DarkModeSetting(darkModeState: Boolean, onUpdateDarkMode: (Boolean) -> Unit 
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = stringResource(R.string.dark_mode_label))
-        Switch(checked = darkModeState, onCheckedChange = { onUpdateDarkMode(it) })
+        Switch(
+            checked = darkModeState,
+            onCheckedChange = { onUpdateDarkMode(it) },
+            modifier = Modifier.size(20.dp)
+        )
     }
 }
 

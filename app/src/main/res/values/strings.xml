@@ -39,6 +39,7 @@
     <string name="sat_label"> Sat </string>
     <string name="session_saved_toast_label">Session saved!</string>
     <string name="start_label">Start </string>
+    <string name="auto_save_label">Autosave Sessions</string>
 
 
 
