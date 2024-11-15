@@ -9,7 +9,6 @@ import android.os.Build
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -72,7 +71,8 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                     delay(1000)
                     continue
                 }
-                val elapsedTime = (System.currentTimeMillis() - startTime - totalPauseDuration) / 1000
+                val elapsedTime = ((System.currentTimeMillis() - startTime - totalPauseDuration) / 1000)
+                Log.d("TimerViewModel", "Elapsed time: $elapsedTime")
                 when (timerState.value) {
                     TimerState.WORK -> {
                         if (settings.value.workDuration == 0 || timeElapsed.value < settings.value.workDuration * 60) {

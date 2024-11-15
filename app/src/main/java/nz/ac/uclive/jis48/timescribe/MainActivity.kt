@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity() {
 
         val timerRepository = TimerRepository(context = this)
         val factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return TimerViewModel(settingsViewModel, timerRepository = timerRepository) as T
             }
@@ -59,6 +60,7 @@ class MainActivity : ComponentActivity() {
         val historyViewModel: HistoryViewModel = ViewModelProvider(
             this,
             object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return HistoryViewModel(timerRepository, timerViewModel) as T
                 }
@@ -139,7 +141,7 @@ class MainActivity : ComponentActivity() {
             NavHost(navController, startDestination = "Timer") {
                 composable(TIMER_ROUTE) {
                     val settings by settingsViewModel.settingsFlow.collectAsState(initial = Settings())
-                    TimerScreen(paddingValues, timerViewModel, settings.darkMode)
+                    TimerScreen(timerViewModel, settings.darkMode)
                 }
                 composable(HISTORY_ROUTE) {
                     HistoryScreen(

@@ -1,6 +1,5 @@
 package nz.ac.uclive.jis48.timescribe.ui.screens.timer
 
-import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -8,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
@@ -21,24 +19,21 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
 import nz.ac.uclive.jis48.timescribe.R
 import nz.ac.uclive.jis48.timescribe.data.Settings
-import nz.ac.uclive.jis48.timescribe.data.TimerService
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
 import nz.ac.uclive.jis48.timescribe.models.TimerViewModel
 import nz.ac.uclive.jis48.timescribe.ui.theme.*
 
 @Composable
-fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel, darkMode: Boolean) {
+fun TimerScreen(viewModel: TimerViewModel, darkMode: Boolean) {
     val context = LocalContext.current
     val showDialog = remember { mutableStateOf(false) }
     val showResetDialog = remember { mutableStateOf(false) }
@@ -64,7 +59,7 @@ fun TimerScreen(paddingValues: PaddingValues, viewModel: TimerViewModel, darkMod
                 Button(onClick = {
                     viewModel.stopTimer(context)
                     showDialog.value = false
-                    Toast.makeText(context, "Session saved!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.session_saved_toast_label), Toast.LENGTH_SHORT).show()
                 }) {
                     Text(text = stringResource(R.string.yes_label))
                 }
@@ -223,7 +218,7 @@ class TimerFragment : Fragment() {
                 val settings by settingsViewModel.settingsFlow.collectAsState(initial = Settings())
                 val darkMode = settings.darkMode
                 TimeScribeTheme {
-                    TimerScreen(PaddingValues(0.dp), timerViewModel, darkMode)
+                    TimerScreen(timerViewModel, darkMode)
                 }
             }
         }
