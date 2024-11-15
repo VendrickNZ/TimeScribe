@@ -40,6 +40,11 @@
     <string name="session_saved_toast_label">セッションが保存されました！</string>
     <string name="start_label">スタート</string>
     <string name="auto_save_label">セッションの自動保存</string>
+    <string name="permission_required_title">権限が必要です</string>
+    <string name="permission_required_message">タイマーが正確に動作するように、TimeScribeには正確なアラームをスケジュールする権限が必要です。アプリ設定でこの権限を許可してください。</string>
+    <string name="open_settings">設定を開く</string>
+    <string name="cancel_label">キャンセル</string>
+
 
 
 </resources>

@@ -15,6 +15,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import nz.ac.uclive.jis48.timescribe.R
 import nz.ac.uclive.jis48.timescribe.data.*
 import nz.ac.uclive.jis48.timescribe.utils.AlarmReceiver
 import java.util.*
@@ -59,6 +60,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
 
     fun startTimer(context: Context) {
         if (timerState.value != TimerState.IDLE) return
+        resetPauseDuration()
         val notifyTimeInMillis = System.currentTimeMillis() + (settings.value.workDuration * 60 * 1000)
         scheduleAlarm(context, notifyTimeInMillis)
         startTime = System.currentTimeMillis()
@@ -73,55 +75,55 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                 }
                 val elapsedTime = ((System.currentTimeMillis() - startTime - totalPauseDuration) / 1000)
                 Log.d("TimerViewModel", "Elapsed time: $elapsedTime")
-                when (timerState.value) {
-                    TimerState.WORK -> {
-                        if (settings.value.workDuration == 0 || timeElapsed.value < settings.value.workDuration * 60) {
-                            timeElapsed.value = elapsedTime.toInt()
-                        } else {
-                            totalWorkDuration += elapsedTime
-                            timeIsOverEvent.value = true
-                            nextState = if (currentCycle == settings.value.cyclesBeforeLongBreak) TimerState.LONG_BREAK else TimerState.BREAK
-                            timerState.value = TimerState.WAITING_FOR_USER
-                            currentCycle++
-                            timeElapsed.value = 0
-                            startTime = System.currentTimeMillis()
-                            nextState = if (currentCycle == settings.value.cyclesBeforeLongBreak) {
-                                TimerState.LONG_BREAK
-                            } else {
-                                TimerState.BREAK
-                            }
-                            timerState.value = TimerState.WAITING_FOR_USER
-                            currentCycle++
-                            timeElapsed.value = 0
-                            startTime = System.currentTimeMillis()
-
-                        }
-                    }
-                    TimerState.BREAK -> {
-                        if (settings.value.breakDuration == 0 || elapsedTime < settings.value.breakDuration * 60) {
-                            timeElapsed.value = elapsedTime.toInt()
-                        } else {
-                            nextState = TimerState.WORK
-                            timerState.value = TimerState.WAITING_FOR_USER
-                            timeIsOverEvent.value = true
-                            timeElapsed.value = 0
-                        }
-                    }
-                    TimerState.LONG_BREAK -> {
-                        if (settings.value.longBreakDuration == 0 || elapsedTime < settings.value.longBreakDuration * 60) {
-                            timeElapsed.value = elapsedTime.toInt()
-                        } else {
-                            nextState = TimerState.WORK
-                            timerState.value = TimerState.WAITING_FOR_USER
-                            timeIsOverEvent.value = true
-                            timeElapsed.value = 0
-                        }
-                    }
-                    else -> {}
-                }
+                updateElapsedTime(elapsedTime)
                 delay(1000)
             }
         }
+    }
+
+    private fun updateElapsedTime(elapsedTime: Long) {
+        when (timerState.value) {
+            TimerState.WORK -> {
+                if (settings.value.workDuration == 0 || elapsedTime < settings.value.workDuration * 60) {
+                    timeElapsed.value = elapsedTime.toInt()
+                } else {
+                    totalWorkDuration += elapsedTime
+                    onStateTransition(
+                        if (currentCycle + 1 >= settings.value.cyclesBeforeLongBreak) TimerState.LONG_BREAK
+                        else TimerState.BREAK
+                    )
+                }
+            }
+            TimerState.BREAK -> {
+                if (settings.value.breakDuration == 0 || elapsedTime < settings.value.breakDuration * 60) {
+                    timeElapsed.value = elapsedTime.toInt()
+                } else {
+                    onStateTransition(TimerState.WORK)
+                }
+            }
+            TimerState.LONG_BREAK -> {
+                if (settings.value.longBreakDuration == 0 || elapsedTime < settings.value.longBreakDuration * 60) {
+                    timeElapsed.value = elapsedTime.toInt()
+                } else {
+                    onStateTransition(TimerState.WORK)
+                }
+            }
+            else -> {}
+        }
+    }
+
+    private fun onStateTransition(next: TimerState) {
+        timeIsOverEvent.value = true
+        nextState = next
+        timerState.value = TimerState.WAITING_FOR_USER
+        if (next == TimerState.WORK && timerState.value == TimerState.LONG_BREAK) {
+            currentCycle = 0
+        } else if (next != TimerState.WORK) {
+            currentCycle++
+        }
+        timeElapsed.value = 0
+        startTime = System.currentTimeMillis()
+        resetPauseDuration()
     }
 
     fun pauseTimer(context: Context) {
@@ -135,7 +137,13 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
 
     fun resumeTimer(context: Context) {
         if (timerState.value == TimerState.IDLE) {
-            val remainingTime = (settings.value.workDuration * 60 - timeElapsed.value) * 1000
+            val totalDuration = when (lastNonIdleState) {
+                TimerState.WORK -> settings.value.workDuration * 60
+                TimerState.BREAK -> settings.value.breakDuration * 60
+                TimerState.LONG_BREAK -> settings.value.longBreakDuration * 60
+                else -> 0
+            }
+            val remainingTime = (totalDuration - timeElapsed.value) * 1000
             val notifyTimeInMillis = System.currentTimeMillis() + remainingTime
             scheduleAlarm(context, notifyTimeInMillis)
             pauseStartTime?.let {
@@ -179,6 +187,12 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         timeElapsed.value = 0
         timerState.value = TimerState.IDLE
         currentCycle = 0
+    }
+
+    private fun resetPauseDuration() {
+        totalPauseDuration = 0
+        pauseStartTime = null
+        pauseIntervals.clear()
     }
 
     private fun scheduleAlarm(context: Context, timeInMillis: Long) {
@@ -249,7 +263,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
     }
 
     fun getProgress(): Float {
-        val totalDuration = when (if (timerState.value == TimerState.IDLE && timeElapsedState != 0) lastNonIdleState else timerState.value) {
+        val totalDuration = when (timerState.value.takeIf { it != TimerState.IDLE } ?: lastNonIdleState) {
             TimerState.WORK -> settings.value.workDuration * 60
             TimerState.BREAK -> settings.value.breakDuration * 60
             TimerState.LONG_BREAK -> settings.value.longBreakDuration * 60
@@ -271,14 +285,12 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         return settings.value.workDuration
     }
 
-    fun getCurrentCycle(): Int {
-        return currentCycle
-    }
-
     fun continueToNextState() {
+        resetPauseDuration()
         startTime = System.currentTimeMillis()
         timerState.value = nextState ?: TimerState.IDLE
         nextState = null
+        timeElapsed.value = 0
     }
 
     private fun handleExactAlarmPermission(context: Context, timeInMillis: Long) {
@@ -287,17 +299,17 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
 
             if (!alarmManager.canScheduleExactAlarms()) {
                 AlertDialog.Builder(context)
-                    .setTitle("Permission Required")
-                    .setMessage("To ensure that your timer works accurately, TimeScribe needs permission to schedule exact alarms. Please grant this permission in the app settings.")
-                    .setPositiveButton("Open Settings") { _, _ ->
-                        // Open app settings
+                    .setTitle(context.getString(R.string.permission_required_title))
+                    .setMessage(context.getString(R.string.permission_required_message))
+                    .setPositiveButton(context.getString(R.string.open_settings)) { _, _ ->
+                // Open app settings
                         val intent = Intent().apply {
                             action = android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
                             data = android.net.Uri.parse("package:${context.packageName}")
                         }
                         context.startActivity(intent)
                     }
-                    .setNegativeButton("Cancel", null)
+                    .setNegativeButton(context.getString(R.string.cancel_label), null)
                     .show()
             } else {
                 scheduleExactAlarm(context, timeInMillis)

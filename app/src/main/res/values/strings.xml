@@ -40,6 +40,10 @@
     <string name="session_saved_toast_label">Session saved!</string>
     <string name="start_label">Start </string>
     <string name="auto_save_label">Autosave Sessions</string>
+    <string name="permission_required_title">Permission Required</string>
+    <string name="permission_required_message">To ensure that your timer works accurately, TimeScribe needs permission to schedule exact alarms. Please grant this permission in the app settings.</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="cancel_label">Cancel</string>
 
 
 
