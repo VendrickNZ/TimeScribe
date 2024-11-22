@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -13,8 +15,8 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.TimeScribe"
-        tools:targetApi="31">
+        android:theme="@style/Theme.TimeScribe">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -24,14 +26,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".data.TimerService" />
-        <receiver android:name=".utils.AlarmReceiver"
+
+        <service
+            android:name=".data.TimerService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse" />
+
+        <receiver
+            android:name=".utils.AlarmReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="nz.ac.uclive.jis48.timescribe.ALARM_ACTION" />
             </intent-filter>
         </receiver>
-
     </application>
-
 </manifest>
