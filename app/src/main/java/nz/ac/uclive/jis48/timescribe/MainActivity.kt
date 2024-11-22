@@ -152,7 +152,9 @@ class MainActivity : ComponentActivity() {
                     )
                 }
                 composable(SETTINGS_ROUTE) {
-                    SettingsScreen(settingsViewModel)
+                    SettingsScreen(settingsViewModel,
+                    paddingValues = paddingValues
+                    )
                 }
             }
         }
