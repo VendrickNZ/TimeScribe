@@ -48,8 +48,10 @@ class TimerService : Service() {
             .setSmallIcon(R.drawable.notification_icon)
             .setContentTitle("Timer Running")
             .setContentText("Your timer is running in the background")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
         return builder.build()
     }
+
 
     private fun createTimerFinishedNotification(): Notification {
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)

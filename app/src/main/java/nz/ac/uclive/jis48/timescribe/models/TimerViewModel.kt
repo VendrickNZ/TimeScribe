@@ -1,10 +1,12 @@
 package nz.ac.uclive.jis48.timescribe.models
 
+
 import android.app.AlarmManager
 import android.app.AlertDialog
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.compose.runtime.MutableState
@@ -12,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.provider.Settings as AndroidSettings
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -60,6 +63,14 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
 
     fun startTimer(context: Context) {
         if (timerState.value != TimerState.IDLE) return
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                checkAndRequestExactAlarmPermission(context)
+                return
+            }
+        }
         resetPauseDuration()
         val notifyTimeInMillis = System.currentTimeMillis() + (settings.value.workDuration * 60 * 1000)
         scheduleAlarm(context, notifyTimeInMillis)
@@ -197,18 +208,16 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
 
     private fun scheduleAlarm(context: Context, timeInMillis: Long) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, AlarmReceiver::class.java)
-        intent.action = "nz.ac.uclive.jis48.timescribe.ALARM_ACTION"
-        val flags = PendingIntent.FLAG_IMMUTABLE
-        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, flags)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // Android 12 (API 31)
-            if (alarmManager.canScheduleExactAlarms()) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent)
-            } else {
-                handleExactAlarmPermission(context, timeInMillis)
-            }
-        } else {
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            action = "nz.ac.uclive.jis48.timescribe.ALARM_ACTION"
+        }
+        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+
+        try {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent)
+        } catch (e: SecurityException) {
+            Log.e("TimerViewModel", "Failed to schedule exact alarm: ${e.message}")
+            // TODO: Optionally inform the user
         }
     }
 
@@ -325,5 +334,26 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
         alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent)
     }
+
+    private fun checkAndRequestExactAlarmPermission(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                AlertDialog.Builder(context)
+                    .setTitle(context.getString(R.string.permission_required_title))
+                    .setMessage(context.getString(R.string.permission_required_message))
+                    .setPositiveButton(context.getString(R.string.open_settings)) { _, _ ->
+                        val intent = Intent(AndroidSettings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                            data = Uri.parse("package:${context.packageName}")
+                        }
+                        context.startActivity(intent)
+                    }
+                    .setNegativeButton(context.getString(R.string.cancel_label), null)
+                    .show()
+            }
+        }
+    }
+
+
 }
 
