@@ -2,7 +2,6 @@ package nz.ac.uclive.jis48.timescribe.ui.screens.settings
 
 import android.content.res.Configuration
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,28 +14,33 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.unit.dp
-import nz.ac.uclive.jis48.timescribe.ui.theme.TimeScribeTheme
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import nz.ac.uclive.jis48.timescribe.R
 import nz.ac.uclive.jis48.timescribe.data.Settings
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
+import nz.ac.uclive.jis48.timescribe.ui.components.CustomKeyboardOverlay
+import nz.ac.uclive.jis48.timescribe.ui.theme.TimeScribeTheme
 
 
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel) {
+fun SettingsScreen(viewModel: SettingsViewModel, paddingValues: PaddingValues = PaddingValues(0.dp)) {
     val settings by viewModel.settingsFlow.collectAsState(initial = Settings())
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    val showCustomKeyboard = remember { mutableStateOf(false) }
+    val customValue = remember { mutableStateOf("") }
 
     val updateWorkDuration: (Int) -> Unit = { newDuration ->
         val newSettings = settings.copy(workDuration = newDuration)
@@ -58,50 +62,83 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
         viewModel.saveSettings(newSettings)
     }
 
-    val updateAutoSave: (Boolean) -> Unit = { newSetting ->
-        val newSettings = settings.copy(autoSave = newSetting)
-        viewModel.saveSettings(newSettings)
-    }
-
     val updateDarkMode: (Boolean) -> Unit = { newSetting ->
         val newSettings = settings.copy(darkMode = newSetting)
         viewModel.saveSettings(newSettings)
     }
 
-    Column(
-        modifier = Modifier
-            .padding(16.dp)
-            .let { if (isLandscape) it.padding(horizontal = 60.dp) else it }
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    ) {
-        Text(
-            text = stringResource(R.string.pomodoro_settings_label),
-            style = MaterialTheme.typography.h6,
-            modifier = if (isLandscape) Modifier.align(Alignment.CenterHorizontally) else Modifier
-        )
-        PomodoroWorkDuration(workDuration = settings.workDuration, onUpdateWorkDuration = updateWorkDuration)
-        PomodoroBreakDuration(breakDuration = settings.breakDuration, onUpdateBreakDuration = updateBreakDuration)
-        PomodoroLongBreakDuration(longBreakDuration = settings.longBreakDuration, onUpdateLongBreakDuration = updateLongBreakDuration)
-        PomodoroCyclesBeforeLongBreak(cyclesBeforeLongBreak = settings.cyclesBeforeLongBreak, onUpdateCyclesBeforeLongBreak = updateCyclesBeforeLongBreak)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.other_label),
-            style = MaterialTheme.typography.h6,
-            modifier = if (isLandscape) Modifier.align(Alignment.CenterHorizontally) else Modifier
-        )
-        AutoSaveSetting(autoSaveState = settings.autoSave, onUpdateAutoSave = updateAutoSave)
-        DarkModeSetting(darkModeState = settings.darkMode, onUpdateDarkMode = updateDarkMode)
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .let { if (isLandscape) it.padding(horizontal = 60.dp) else it }
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            Text(
+                text = stringResource(R.string.pomodoro_settings_label),
+                style = MaterialTheme.typography.h6,
+                modifier = if (isLandscape) Modifier.align(Alignment.CenterHorizontally) else Modifier
+            )
+            PomodoroWorkDuration(
+                workDuration = settings.workDuration,
+                onUpdateWorkDuration = updateWorkDuration,
+                showCustomKeyboard = showCustomKeyboard,
+                customValue = customValue
+            )
+            PomodoroBreakDuration(
+                breakDuration = settings.breakDuration,
+                onUpdateBreakDuration = updateBreakDuration
+            )
+            PomodoroLongBreakDuration(
+                longBreakDuration = settings.longBreakDuration,
+                onUpdateLongBreakDuration = updateLongBreakDuration
+            )
+            PomodoroCyclesBeforeLongBreak(
+                cyclesBeforeLongBreak = settings.cyclesBeforeLongBreak,
+                onUpdateCyclesBeforeLongBreak = updateCyclesBeforeLongBreak
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.other_label),
+                style = MaterialTheme.typography.h6,
+                modifier = if (isLandscape) Modifier.align(Alignment.CenterHorizontally) else Modifier
+            )
+            DarkModeSetting(darkModeState = settings.darkMode, onUpdateDarkMode = updateDarkMode)
+        }
+        if (showCustomKeyboard.value) {
+            CustomKeyboardOverlay(
+                inputText = customValue.value,
+                onKeyPress = { key -> customValue.value += key },
+                onDeletePress = {
+                    if (customValue.value.isNotEmpty()) {
+                        customValue.value = customValue.value.dropLast(1)
+                    }
+                },
+                onConfirm = {
+                    val newDuration = customValue.value.toIntOrNull() ?: 25
+                    updateWorkDuration(newDuration)
+                    customValue.value = ""
+                    showCustomKeyboard.value = false
+                },
+                onDismiss = {
+                    customValue.value = ""
+                    showCustomKeyboard.value = false
+                },
+                bottomPadding = paddingValues
+            )
+        }
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PomodoroWorkDuration(workDuration: Int, onUpdateWorkDuration: (Int) -> Unit) {
+fun PomodoroWorkDuration(
+    workDuration: Int,
+    onUpdateWorkDuration: (Int) -> Unit,
+    showCustomKeyboard: MutableState<Boolean>,
+    customValue: MutableState<String>
+) {
     val expanded = remember { mutableStateOf(false) }
-    val customValue = remember { mutableStateOf("") }
-    val focusManager = LocalFocusManager.current
-    val keyboardController = LocalSoftwareKeyboardController.current
 
     Row(
         modifier = Modifier
@@ -126,36 +163,16 @@ fun PomodoroWorkDuration(workDuration: Int, onUpdateWorkDuration: (Int) -> Unit)
                     }
                 }
                 DropdownMenuItem(onClick = {
-                    onUpdateWorkDuration(-1)
                     expanded.value = false
+                    showCustomKeyboard.value = true
                 }) {
                     Text(text = stringResource(R.string.custom_label))
                 }
             }
         }
     }
-
-    if (workDuration == -1) {
-        TextField(
-            value = customValue.value,
-            onValueChange = { customValue.value = it },
-            label = { Text(text = stringResource(R.string.custom_value_label)) },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    keyboardController?.hide()
-                    focusManager.clearFocus()
-                    val newDuration = customValue.value.toIntOrNull() ?: 25
-                    onUpdateWorkDuration(newDuration)
-                    customValue.value = ""
-                }
-            )
-        )
-    }
 }
+
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -281,7 +298,10 @@ fun PomodoroLongBreakDuration(longBreakDuration: Int, onUpdateLongBreakDuration:
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PomodoroCyclesBeforeLongBreak(cyclesBeforeLongBreak: Int, onUpdateCyclesBeforeLongBreak: (Int) -> Unit) {
+fun PomodoroCyclesBeforeLongBreak(
+    cyclesBeforeLongBreak: Int,
+    onUpdateCyclesBeforeLongBreak: (Int) -> Unit
+) {
     val expanded = remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -341,22 +361,7 @@ fun PomodoroCyclesBeforeLongBreak(cyclesBeforeLongBreak: Int, onUpdateCyclesBefo
 }
 
 @Composable
-fun AutoSaveSetting(autoSaveState: Boolean, onUpdateAutoSave: (Boolean) -> Unit ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text = stringResource(R.string.auto_save_label))
-        Switch(checked = autoSaveState,
-            onCheckedChange = { onUpdateAutoSave(it) },
-            modifier = Modifier.size(20.dp))
-    }
-}
-
-@Composable
-fun DarkModeSetting(darkModeState: Boolean, onUpdateDarkMode: (Boolean) -> Unit ) {
+fun DarkModeSetting(darkModeState: Boolean, onUpdateDarkMode: (Boolean) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
