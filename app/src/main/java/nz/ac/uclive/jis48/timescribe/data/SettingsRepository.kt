@@ -32,7 +32,6 @@ class SettingsRepository(private val context: Context) {
             preferences[BREAK_DURATION_KEY] = settings.breakDuration
             preferences[LONG_BREAK_DURATION_KEY] = settings.longBreakDuration
             preferences[CYCLES_BEFORE_LONG_BREAK_KEY] = settings.cyclesBeforeLongBreak
-            preferences[AUTO_SAVE_KEY] = settings.autoSave
             preferences[DARK_MODE_KEY] = settings.darkMode
         }
         Log.d("SettingsRepository", "Settings saved successfully")
@@ -53,7 +52,6 @@ class SettingsRepository(private val context: Context) {
                 breakDuration = preferences[BREAK_DURATION_KEY] ?: 5,
                 longBreakDuration = preferences[LONG_BREAK_DURATION_KEY] ?: 15,
                 cyclesBeforeLongBreak = preferences[CYCLES_BEFORE_LONG_BREAK_KEY] ?: 4,
-                autoSave = preferences[AUTO_SAVE_KEY] ?: false,
                 darkMode = preferences[DARK_MODE_KEY] ?: false
             )
         }

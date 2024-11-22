@@ -5,6 +5,5 @@ data class Settings(
     val breakDuration: Int = 5,
     val longBreakDuration: Int = 15,
     val cyclesBeforeLongBreak: Int = 4,
-    val autoSave: Boolean = false,
     val darkMode: Boolean = false
 )
