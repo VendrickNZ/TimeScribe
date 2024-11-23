@@ -8,8 +8,14 @@ import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.material.BottomNavigation
+import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.Icon
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -20,15 +26,20 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import nz.ac.uclive.jis48.timescribe.data.*
+import nz.ac.uclive.jis48.timescribe.data.ACTION_NOTIFY_TIME_IS_OVER
+import nz.ac.uclive.jis48.timescribe.data.ScreenItem
+import nz.ac.uclive.jis48.timescribe.data.Settings
+import nz.ac.uclive.jis48.timescribe.data.SettingsRepository
+import nz.ac.uclive.jis48.timescribe.data.TimerRepository
+import nz.ac.uclive.jis48.timescribe.data.TimerService
 import nz.ac.uclive.jis48.timescribe.models.HistoryViewModel
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModelFactory
 import nz.ac.uclive.jis48.timescribe.models.TimerViewModel
-import nz.ac.uclive.jis48.timescribe.ui.screens.timer.TimerScreen
 import nz.ac.uclive.jis48.timescribe.ui.screens.history.HistoryScreen
 import nz.ac.uclive.jis48.timescribe.ui.screens.history.shareSession
 import nz.ac.uclive.jis48.timescribe.ui.screens.settings.SettingsScreen
+import nz.ac.uclive.jis48.timescribe.ui.screens.timer.TimerScreen
 import nz.ac.uclive.jis48.timescribe.ui.theme.TimeScribeTheme
 
 const val TIMER_ROUTE = "Timer"
@@ -55,7 +66,8 @@ class MainActivity : ComponentActivity() {
                 return TimerViewModel(settingsViewModel, timerRepository = timerRepository) as T
             }
         }
-        val timerViewModel: TimerViewModel = ViewModelProvider(this, factory)[TimerViewModel::class.java]
+        val timerViewModel: TimerViewModel =
+            ViewModelProvider(this, factory)[TimerViewModel::class.java]
 
         val historyViewModel: HistoryViewModel = ViewModelProvider(
             this,
@@ -80,7 +92,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val settings by settingsViewModel.settingsFlow.collectAsState(initial = Settings())
-            TimeScribeTheme (darkModeState = settings.darkMode) {
+            TimeScribeTheme(darkModeState = settings.darkMode) {
                 MainScreen(timerViewModel, settingsViewModel, historyViewModel)
             }
         }
@@ -93,13 +105,16 @@ class MainActivity : ComponentActivity() {
         val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
             description = descriptionText
         }
-        val notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager: NotificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
     }
 
     @Composable
-    fun MainScreen(timerViewModel: TimerViewModel, settingsViewModel: SettingsViewModel,
-                   historyViewModel: HistoryViewModel) {
+    fun MainScreen(
+        timerViewModel: TimerViewModel, settingsViewModel: SettingsViewModel,
+        historyViewModel: HistoryViewModel
+    ) {
 
         val navController = rememberNavController()
         val items = listOf(
@@ -140,20 +155,18 @@ class MainActivity : ComponentActivity() {
         { paddingValues ->
             NavHost(navController, startDestination = "Timer") {
                 composable(TIMER_ROUTE) {
-                    val settings by settingsViewModel.settingsFlow.collectAsState(initial = Settings())
-                    TimerScreen(timerViewModel, settings.darkMode)
+                    TimerScreen(timerViewModel)
                 }
                 composable(HISTORY_ROUTE) {
                     HistoryScreen(
-                        paddingValues = paddingValues,
                         historyViewModel = historyViewModel,
-                        settingsViewModel = settingsViewModel,
                         onShareSession = { session -> shareSession(this@MainActivity, session) }
                     )
                 }
                 composable(SETTINGS_ROUTE) {
-                    SettingsScreen(settingsViewModel,
-                    paddingValues = paddingValues
+                    SettingsScreen(
+                        settingsViewModel,
+                        paddingValues = paddingValues
                     )
                 }
             }
