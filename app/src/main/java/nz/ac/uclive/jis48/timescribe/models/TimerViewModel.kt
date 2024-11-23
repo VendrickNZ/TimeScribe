@@ -265,9 +265,9 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         val seconds = timeElapsedState % 60
 
         return if (hours > 0) {
-            String.format("%d:%02d:%02d", hours, minutes, seconds)
+            String.format(Locale.ROOT, "%d:%02d:%02d", hours, minutes, seconds)
         } else {
-            String.format("%02d:%02d", minutes, seconds)
+            String.format(Locale.ROOT, "%02d:%02d", minutes, seconds)
         }
     }
 
@@ -300,39 +300,6 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         timerState.value = nextState ?: TimerState.IDLE
         nextState = null
         timeElapsed.value = 0
-    }
-
-    private fun handleExactAlarmPermission(context: Context, timeInMillis: Long) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-            if (!alarmManager.canScheduleExactAlarms()) {
-                AlertDialog.Builder(context)
-                    .setTitle(context.getString(R.string.permission_required_title))
-                    .setMessage(context.getString(R.string.permission_required_message))
-                    .setPositiveButton(context.getString(R.string.open_settings)) { _, _ ->
-                // Open app settings
-                        val intent = Intent().apply {
-                            action = android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
-                            data = android.net.Uri.parse("package:${context.packageName}")
-                        }
-                        context.startActivity(intent)
-                    }
-                    .setNegativeButton(context.getString(R.string.cancel_label), null)
-                    .show()
-            } else {
-                scheduleExactAlarm(context, timeInMillis)
-            }
-        } else {
-            scheduleExactAlarm(context, timeInMillis)
-        }
-    }
-
-    private fun scheduleExactAlarm(context: Context, timeInMillis: Long) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, AlarmReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
-        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent)
     }
 
     private fun checkAndRequestExactAlarmPermission(context: Context) {
