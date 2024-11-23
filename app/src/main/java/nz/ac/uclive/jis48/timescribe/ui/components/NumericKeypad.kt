@@ -1,21 +1,22 @@
 package nz.ac.uclive.jis48.timescribe.ui.components
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import nz.ac.uclive.jis48.timescribe.R
 
 @Composable
 fun NumericKeypad(
-    inputText: String,
     onKeyPress: (String) -> Unit,
     onDeletePress: () -> Unit,
     onConfirm: () -> Unit,
@@ -61,7 +62,7 @@ fun NumericKeypad(
                     start.linkTo(button2.end, spacing)
                 })
 
-        KeyButton("Delete",
+        KeyButton(imageRes = R.drawable.backspace_icon,
             onClick = onDeletePress,
             modifier = Modifier
                 .height(buttonHeight)
@@ -102,7 +103,7 @@ fun NumericKeypad(
                 })
 
 
-        KeyButton("Confirm",
+        KeyButton(imageRes = R.drawable.continue_icon,
             onClick = onConfirm,
             modifier = Modifier
                 .width(buttonWidth)
@@ -155,11 +156,25 @@ fun NumericKeypad(
     }
 }
 
+
 @Composable
-fun KeyButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun KeyButton(
+    label: String? = null,
+    imageRes: Int? = null,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Button(
         onClick = onClick, modifier = modifier
     ) {
-        Text(text = label, style = MaterialTheme.typography.h6)
+        if (imageRes != null) {
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = label ?: "Button",
+                modifier = Modifier.fillMaxSize()
+            )
+        } else if (label != null) {
+            Text(text = label, style = MaterialTheme.typography.h6)
+        }
     }
 }
