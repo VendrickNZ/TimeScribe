@@ -51,7 +51,6 @@ import java.util.Locale
 
 @Composable
 fun HistoryScreen(
-    paddingValues: PaddingValues,
     historyViewModel: HistoryViewModel,
     onShareSession: (Session) -> Unit
 ) {
@@ -238,7 +237,6 @@ class HistoryFragment(
                 val settings by settingsViewModel.settingsFlow.collectAsState(initial = Settings())
                 TimeScribeTheme(darkModeState = settings.darkMode) {
                     HistoryScreen(
-                        paddingValues = PaddingValues(0.dp),
                         historyViewModel = historyViewModel,
                         onShareSession = { session ->
                             shareSession(requireContext(), session)
