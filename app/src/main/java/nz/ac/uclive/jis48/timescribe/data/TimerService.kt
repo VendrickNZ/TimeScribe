@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.*
 import androidx.core.app.NotificationCompat
-import nz.ac.uclive.jis48.timescribe.MainActivity
 import nz.ac.uclive.jis48.timescribe.R
 
 const val NOTIFICATION_ID = 1
