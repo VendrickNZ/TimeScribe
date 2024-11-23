@@ -2,21 +2,29 @@ package nz.ac.uclive.jis48.timescribe.ui.screens.timer
 
 import android.content.res.Configuration
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Button
+import androidx.compose.material.LinearProgressIndicator
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
+import androidx.compose.material.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
@@ -25,15 +33,22 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import nz.ac.uclive.jis48.timescribe.R
 import nz.ac.uclive.jis48.timescribe.data.Settings
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
 import nz.ac.uclive.jis48.timescribe.models.TimerViewModel
-import nz.ac.uclive.jis48.timescribe.ui.theme.*
+import nz.ac.uclive.jis48.timescribe.ui.theme.BreakColorDark
+import nz.ac.uclive.jis48.timescribe.ui.theme.BreakColorLight
+import nz.ac.uclive.jis48.timescribe.ui.theme.LongBreakColorDark
+import nz.ac.uclive.jis48.timescribe.ui.theme.LongBreakColorLight
+import nz.ac.uclive.jis48.timescribe.ui.theme.TimeScribeTheme
+import nz.ac.uclive.jis48.timescribe.ui.theme.WorkColorDark
+import nz.ac.uclive.jis48.timescribe.ui.theme.WorkColorLight
 
 @Composable
-fun TimerScreen(viewModel: TimerViewModel, darkMode: Boolean) {
+fun TimerScreen(viewModel: TimerViewModel) {
     val context = LocalContext.current
     val showDialog = remember { mutableStateOf(false) }
     val showResetDialog = remember { mutableStateOf(false) }
@@ -43,34 +58,58 @@ fun TimerScreen(viewModel: TimerViewModel, darkMode: Boolean) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-    val textColor = when (viewModel.timerState.value) {
-        TimerViewModel.TimerState.WORK -> if (darkMode) lightRed else darkRed
-        TimerViewModel.TimerState.BREAK -> if (darkMode) lightBlue else darkBlue
-        TimerViewModel.TimerState.LONG_BREAK -> if (darkMode) darkerLightBlue else darkBlue
+    val isLightTheme = MaterialTheme.colors.isLight
+
+    val timerStateColor = when (viewModel.timerState.value) {
+        TimerViewModel.TimerState.WORK -> if (isLightTheme) WorkColorLight else WorkColorDark
+        TimerViewModel.TimerState.BREAK -> if (isLightTheme) BreakColorLight else BreakColorDark
+        TimerViewModel.TimerState.LONG_BREAK -> if (isLightTheme) LongBreakColorLight else LongBreakColorDark
         else -> MaterialTheme.colors.onBackground
     }
 
     if (showDialog.value) {
         AlertDialog(
-            title = { Text(text = stringResource(R.string.stop_timer_label)) },
-            text = { Text(text = stringResource(R.string.are_you_sure_stop_timer_label)) },
+            title = {
+                Text(
+                    text = stringResource(R.string.stop_timer_label),
+                    color = MaterialTheme.colors.onSurface
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.are_you_sure_stop_timer_label),
+                    color = MaterialTheme.colors.onSurface
+                )
+            },
             onDismissRequest = { showDialog.value = false },
             confirmButton = {
-                Button(onClick = {
+                TextButton(onClick = {
                     viewModel.stopTimer(context)
                     showDialog.value = false
-                    Toast.makeText(context, context.getString(R.string.session_saved_toast_label), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.session_saved_toast_label),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }) {
-                    Text(text = stringResource(R.string.yes_label))
+                    Text(
+                        text = stringResource(R.string.yes_label),
+                        color = MaterialTheme.colors.primary
+                    )
                 }
             },
             dismissButton = {
-                Button(onClick = { showDialog.value = false }) {
-                    Text(text = stringResource(R.string.no_label))
+                TextButton(onClick = { showDialog.value = false }) {
+                    Text(
+                        text = stringResource(R.string.no_label),
+                        color = MaterialTheme.colors.primary
+                    )
                 }
-            }
+            },
+            backgroundColor = MaterialTheme.colors.surface
         )
     }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -81,11 +120,11 @@ fun TimerScreen(viewModel: TimerViewModel, darkMode: Boolean) {
                 Text(
                     text = currentStateDuration,
                     style = MaterialTheme.typography.h6,
-                    color = textColor
+                    color = timerStateColor
                 )
                 LinearProgressIndicator(
                     progress = progress,
-                    color = textColor,
+                    color = timerStateColor,
                     modifier = if (isLandscape) Modifier.width(450.dp) else Modifier.width(225.dp)
                 )
             }
@@ -130,6 +169,7 @@ fun TimerScreen(viewModel: TimerViewModel, darkMode: Boolean) {
                             Text(text = stringResource(R.string.stop_button))
                         }
                     }
+
                     TimerViewModel.TimerState.IDLE -> {
                         if (viewModel.timeElapsedState == 0) {
                             Button(onClick = { viewModel.startTimer(context) }) {
@@ -206,7 +246,7 @@ fun ConfirmActionDialog(
 
 class TimerFragment : Fragment() {
     private val timerViewModel: TimerViewModel by viewModels()
-    private val settingsViewModel: SettingsViewModel by viewModels() // Assuming you have a ViewModel for settings
+    private val settingsViewModel: SettingsViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -216,13 +256,13 @@ class TimerFragment : Fragment() {
         return ComposeView(requireContext()).apply {
             setContent {
                 val settings by settingsViewModel.settingsFlow.collectAsState(initial = Settings())
-                val darkMode = settings.darkMode
-                TimeScribeTheme {
-                    TimerScreen(timerViewModel, darkMode)
+                TimeScribeTheme(darkModeState = settings.darkMode) {
+                    TimerScreen(timerViewModel)
                 }
             }
         }
     }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
