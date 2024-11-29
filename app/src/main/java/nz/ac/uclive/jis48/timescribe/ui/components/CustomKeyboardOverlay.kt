@@ -94,7 +94,7 @@ fun CustomKeyboardOverlay(
                             top.linkTo(parent.top)
                             end.linkTo(parent.end)
                         }
-                        .padding(16.dp)
+                        .padding(0.dp)
                         .clickable { onDismiss() }
                 ) {
                     Image(
@@ -135,7 +135,7 @@ fun CustomKeyboardOverlay(
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
                         }
-                        .padding(8.dp)
+                        .padding(0.dp)
                 )
             }
         }
