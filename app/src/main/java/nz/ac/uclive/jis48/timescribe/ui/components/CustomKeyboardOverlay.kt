@@ -1,5 +1,11 @@
 package nz.ac.uclive.jis48.timescribe.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,7 +32,9 @@ import nz.ac.uclive.jis48.timescribe.R
 
 @Composable
 fun CustomKeyboardOverlay(
+    visible: Boolean,
     inputText: String,
+    animationDurationMillis: Int = 300,
     onKeyPress: (String) -> Unit,
     onDeletePress: () -> Unit,
     onConfirm: () -> Unit,
@@ -36,87 +44,100 @@ fun CustomKeyboardOverlay(
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
+    AnimatedVisibility(
+        visible = visible,
+        enter = slideInVertically(
+            initialOffsetY = { fullHeight -> fullHeight },
+            animationSpec = tween(durationMillis = animationDurationMillis)
+        ) + fadeIn(animationSpec = tween(durationMillis = animationDurationMillis)),
+        exit = slideOutVertically(
+            targetOffsetY = { fullHeight -> fullHeight },
+            animationSpec = tween(durationMillis = animationDurationMillis)
+        ) + fadeOut(animationSpec = tween(durationMillis = animationDurationMillis))
     ) {
+
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(screenHeight.times(0.25f))
-                .background(Color.Black.copy(alpha = 0.85f)) // Black with 85% opacity
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) {
-                    onDismiss()
-                }
-        )
-
-        ConstraintLayout(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(screenHeight.times(0.75f))
-                .align(Alignment.BottomCenter)
-                .background(MaterialTheme.colors.surface)
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() },
-                    onClick = {}
-                )
-                .padding(bottomPadding)
+                .fillMaxSize()
         ) {
-            val (text, keypad, exit) = createRefs()
-
             Box(
                 modifier = Modifier
-                    .constrainAs(exit) {
-                        top.linkTo(parent.top)
-                        end.linkTo(parent.end)
+                    .fillMaxWidth()
+                    .height(screenHeight.times(0.25f))
+                    .background(Color.Black.copy(alpha = 0.85f)) // Black with 85% opacity
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
+                        onDismiss()
                     }
-                    .padding(16.dp)
-                    .clickable { onDismiss() }
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.close_icon),
-                    contentDescription = "Close",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            )
 
-            Box(
+            ConstraintLayout(
                 modifier = Modifier
-                    .constrainAs(text) {
-                        top.linkTo(parent.top)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        bottom.linkTo(keypad.top)
-                    }
-            ) {
-                if (inputText.isEmpty()) {
-                    Text(
-                        text = "Enter number...",
-                        style = MaterialTheme.typography.h5.copy(color = Color.Gray)
+                    .fillMaxWidth()
+                    .height(screenHeight.times(0.75f))
+                    .align(Alignment.BottomCenter)
+                    .background(MaterialTheme.colors.surface)
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                        onClick = {}
                     )
-                } else {
-                    Text(
-                        text = inputText,
-                        style = MaterialTheme.typography.h5
+                    .padding(bottomPadding)
+            ) {
+                val (text, keypad, exit) = createRefs()
+
+                Box(
+                    modifier = Modifier
+                        .constrainAs(exit) {
+                            top.linkTo(parent.top)
+                            end.linkTo(parent.end)
+                        }
+                        .padding(16.dp)
+                        .clickable { onDismiss() }
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.close_icon),
+                        contentDescription = "Close",
+                        modifier = Modifier.size(24.dp)
                     )
                 }
-            }
-            NumericKeypad(
-                onKeyPress = onKeyPress,
-                onDeletePress = onDeletePress,
-                onConfirm = onConfirm,
-                modifier = Modifier
-                    .constrainAs(keypad) {
-                        bottom.linkTo(parent.bottom)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
+
+                Box(
+                    modifier = Modifier
+                        .constrainAs(text) {
+                            top.linkTo(parent.top)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                            bottom.linkTo(keypad.top)
+                        }
+                ) {
+                    if (inputText.isEmpty()) {
+                        Text(
+                            text = "Enter number...",
+                            style = MaterialTheme.typography.h5.copy(color = Color.Gray)
+                        )
+                    } else {
+                        Text(
+                            text = inputText,
+                            style = MaterialTheme.typography.h5
+                        )
                     }
-                    .padding(8.dp)
-            )
+                }
+                NumericKeypad(
+                    onKeyPress = onKeyPress,
+                    onDeletePress = onDeletePress,
+                    onConfirm = onConfirm,
+                    modifier = Modifier
+                        .constrainAs(keypad) {
+                            bottom.linkTo(parent.bottom)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                        }
+                        .padding(8.dp)
+                )
+            }
         }
     }
 }

@@ -28,6 +28,7 @@ import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -46,6 +47,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import kotlinx.coroutines.delay
 import nz.ac.uclive.jis48.timescribe.R
 import nz.ac.uclive.jis48.timescribe.data.Settings
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
@@ -64,6 +66,15 @@ fun SettingsScreen(
 
     val showCustomKeyboard = remember { mutableStateOf(false) }
     val customValue = remember { mutableStateOf("") }
+
+    val animationDurationMillis = 300
+
+    if (!showCustomKeyboard.value && customValue.value.isNotEmpty()) {
+        LaunchedEffect(showCustomKeyboard.value) {
+            delay(animationDurationMillis.toLong())
+            customValue.value = ""
+        }
+    }
 
     val updateWorkDuration: (Int) -> Unit = { newDuration ->
         val newSettings = settings.copy(workDuration = newDuration)
@@ -128,28 +139,34 @@ fun SettingsScreen(
             )
             DarkModeSetting(darkModeState = settings.darkMode, onUpdateDarkMode = updateDarkMode)
         }
-        if (showCustomKeyboard.value) {
-            CustomKeyboardOverlay(
-                inputText = customValue.value,
-                onKeyPress = { key -> customValue.value += key },
-                onDeletePress = {
-                    if (customValue.value.isNotEmpty()) {
-                        customValue.value = customValue.value.dropLast(1)
-                    }
-                },
-                onConfirm = {
-                    val newDuration = customValue.value.toIntOrNull() ?: 25
-                    updateWorkDuration(newDuration)
-                    customValue.value = ""
-                    showCustomKeyboard.value = false
-                },
-                onDismiss = {
-                    customValue.value = ""
-                    showCustomKeyboard.value = false
-                },
-                bottomPadding = paddingValues
-            )
+        CustomKeyboardOverlay(
+            visible = showCustomKeyboard.value,
+            inputText = customValue.value,
+            onKeyPress = { key -> customValue.value += key },
+            onDeletePress = {
+                if (customValue.value.isNotEmpty()) {
+                    customValue.value = customValue.value.dropLast(1)
+                }
+            },
+            onConfirm = {
+                val newDuration = customValue.value.toIntOrNull() ?: 25
+                updateWorkDuration(newDuration)
+                customValue.value = ""
+                showCustomKeyboard.value = false
+            },
+            onDismiss = {
+                showCustomKeyboard.value = false
+            },
+            bottomPadding = paddingValues
+        )
+
+        if (!showCustomKeyboard.value && customValue.value.isNotEmpty()) {
+            LaunchedEffect(showCustomKeyboard.value) {
+                delay(animationDurationMillis.toLong())
+                customValue.value = ""
+            }
         }
+
     }
 }
 
