@@ -63,7 +63,7 @@ fun CustomKeyboardOverlay(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(screenHeight.times(0.25f))
+                    .height(screenHeight.times(0.40f))
                     .background(Color.Black.copy(alpha = 0.85f)) // Black with 85% opacity
                     .clickable(
                         indication = null,
@@ -76,7 +76,7 @@ fun CustomKeyboardOverlay(
             ConstraintLayout(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(screenHeight.times(0.75f))
+                    .height(screenHeight.times(0.60f))
                     .align(Alignment.BottomCenter)
                     .background(MaterialTheme.colors.surface)
                     .clickable(

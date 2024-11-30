@@ -5,17 +5,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ChainStyle
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import nz.ac.uclive.jis48.timescribe.R
+import nz.ac.uclive.jis48.timescribe.ui.theme.KeyboardDarkGray
+import nz.ac.uclive.jis48.timescribe.ui.theme.NearBlack
 
 @Composable
 fun NumericKeypad(
@@ -29,7 +38,6 @@ fun NumericKeypad(
             .fillMaxWidth()
     ) {
         val buttonHeight = 60.dp
-        val buttonWidth = 85.dp
 
         val (
             button1, button2, button3, buttonDelete,
@@ -61,9 +69,11 @@ fun NumericKeypad(
                 width = Dimension.fillToConstraints
             })
 
+        // backspace button
         KeyButton(
             imageRes = R.drawable.backspace_icon,
             onClick = onDeletePress,
+            backgroundColour = NearBlack,
             modifier = Modifier
                 .height(buttonHeight)
                 .constrainAs(buttonDelete) {
@@ -100,15 +110,28 @@ fun NumericKeypad(
                 width = Dimension.fillToConstraints
             })
 
+        // confirm/continue button
         KeyButton(
             imageRes = R.drawable.continue_icon,
             onClick = onConfirm,
+            backgroundColour = NearBlack,
             modifier = Modifier
                 .height(buttonHeight * 3)
                 .constrainAs(buttonConfirm) {
                     top.linkTo(buttonDelete.bottom)
                     width = Dimension.fillToConstraints
-                })
+                }
+                .drawBehind {
+                    val strokeWidth = 1.dp.toPx()
+                    drawLine(
+                        color = KeyboardDarkGray,
+                        start = Offset(0f, 0f),
+                        end = Offset(size.width, 0f),
+                        strokeWidth = strokeWidth
+                    )
+                }
+                .zIndex(3f)
+        )
 
         createHorizontalChain(
             button4, button5, button6, buttonConfirm,
@@ -155,6 +178,20 @@ fun NumericKeypad(
                 end.linkTo(parent.end)
                 width = Dimension.fillToConstraints
             })
+
+        createHorizontalChain(
+            button0, buttonConfirm,
+            chainStyle = ChainStyle.Spread
+        )
+
+        constrain(button0) {
+            start.linkTo(parent.start)
+            end.linkTo(buttonConfirm.start)
+        }
+        constrain(buttonConfirm) {
+            start.linkTo(button0.end)
+            end.linkTo(buttonDelete.end)
+        }
     }
 }
 
@@ -164,15 +201,28 @@ fun KeyButton(
     label: String? = null,
     imageRes: Int? = null,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    backgroundColour: Color = KeyboardDarkGray,
+    contentColour: Color = contentColorFor(backgroundColour),
 ) {
     Button(
-        onClick = onClick, modifier = modifier, shape = RectangleShape
+        onClick = onClick,
+        modifier = modifier,
+        shape = RectangleShape,
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = backgroundColour,
+            contentColor = contentColour
+        ),
+        elevation = ButtonDefaults.elevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 4.dp
+        )
     ) {
         if (imageRes != null) {
             Image(
                 painter = painterResource(id = imageRes),
                 contentDescription = label ?: "Button",
+                colorFilter = ColorFilter.tint(contentColour),
                 modifier = Modifier.fillMaxSize()
             )
         } else if (label != null) {
