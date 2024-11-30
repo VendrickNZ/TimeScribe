@@ -4,6 +4,8 @@ import androidx.compose.ui.graphics.Color
 
 val White = Color(0xFFFFFFFF)
 val Black = Color(0xFF000000)
+val KeyboardDarkGray = Color(0xFF212121)
+val NearBlack = Color(0xFF161616)
 
 val LightPrimary = Color(0xFFF44336)         // Material Red 500
 val LightPrimaryVariant = Color(0xFFD32F2F)   // Material Red 700
