@@ -195,7 +195,6 @@ fun NumericKeypad(
     }
 }
 
-
 @Composable
 fun KeyButton(
     label: String? = null,

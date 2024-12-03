@@ -2,6 +2,7 @@ package nz.ac.uclive.jis48.timescribe.ui.screens.settings
 
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,15 +19,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Switch
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -35,15 +33,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -54,6 +47,12 @@ import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
 import nz.ac.uclive.jis48.timescribe.ui.components.CustomKeyboardOverlay
 import nz.ac.uclive.jis48.timescribe.ui.theme.TimeScribeTheme
 
+enum class SettingType {
+    WorkDuration,
+    BreakDuration,
+    LongBreakDuration,
+    CyclesBeforeLongBreak
+}
 
 @Composable
 fun SettingsScreen(
@@ -68,6 +67,7 @@ fun SettingsScreen(
     val customValue = remember { mutableStateOf("") }
 
     val animationDurationMillis = 300
+    val currentSetting = remember { mutableStateOf<SettingType?>(null) }
 
     if (!showCustomKeyboard.value && customValue.value.isNotEmpty()) {
         LaunchedEffect(showCustomKeyboard.value) {
@@ -118,18 +118,25 @@ fun SettingsScreen(
                 workDuration = settings.workDuration,
                 onUpdateWorkDuration = updateWorkDuration,
                 showCustomKeyboard = showCustomKeyboard,
+                currentSetting = currentSetting
             )
             PomodoroBreakDuration(
                 breakDuration = settings.breakDuration,
-                onUpdateBreakDuration = updateBreakDuration
+                onUpdateBreakDuration = updateBreakDuration,
+                showCustomKeyboard = showCustomKeyboard,
+                currentSetting = currentSetting
             )
             PomodoroLongBreakDuration(
                 longBreakDuration = settings.longBreakDuration,
-                onUpdateLongBreakDuration = updateLongBreakDuration
+                onUpdateLongBreakDuration = updateLongBreakDuration,
+                showCustomKeyboard = showCustomKeyboard,
+                currentSetting = currentSetting
             )
             PomodoroCyclesBeforeLongBreak(
                 cyclesBeforeLongBreak = settings.cyclesBeforeLongBreak,
-                onUpdateCyclesBeforeLongBreak = updateCyclesBeforeLongBreak
+                onUpdateCyclesBeforeLongBreak = updateCyclesBeforeLongBreak,
+                showCustomKeyboard = showCustomKeyboard,
+                currentSetting = currentSetting
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
@@ -149,13 +156,25 @@ fun SettingsScreen(
                 }
             },
             onConfirm = {
-                val newDuration = customValue.value.toIntOrNull() ?: 25
-                updateWorkDuration(newDuration)
+                val newValue = customValue.value.toIntOrNull() ?: 0
+                when (currentSetting.value) {
+                    SettingType.WorkDuration -> updateWorkDuration(newValue)
+                    SettingType.BreakDuration -> updateBreakDuration(newValue)
+                    SettingType.LongBreakDuration -> updateLongBreakDuration(newValue)
+                    SettingType.CyclesBeforeLongBreak -> updateCyclesBeforeLongBreak(newValue)
+                    else -> {}
+                }
+                Log.d(
+                    "SettingsScreen",
+                    "New value: $newValue currentSetting: ${currentSetting.value}"
+                )
                 customValue.value = ""
                 showCustomKeyboard.value = false
+                currentSetting.value = null
             },
             onDismiss = {
                 showCustomKeyboard.value = false
+                currentSetting.value = null
             },
             bottomPadding = paddingValues
         )
@@ -175,6 +194,7 @@ fun PomodoroWorkDuration(
     workDuration: Int,
     onUpdateWorkDuration: (Int) -> Unit,
     showCustomKeyboard: MutableState<Boolean>,
+    currentSetting: MutableState<SettingType?>
 ) {
     val expanded = remember { mutableStateOf(false) }
 
@@ -202,6 +222,8 @@ fun PomodoroWorkDuration(
                 }
                 DropdownMenuItem(onClick = {
                     expanded.value = false
+                    currentSetting.value = SettingType.WorkDuration
+                    Log.d("SettingsScreen", "checking currentSetting: ${currentSetting.value}")
                     showCustomKeyboard.value = true
                 }) {
                     Text(text = stringResource(R.string.custom_label))
@@ -212,13 +234,14 @@ fun PomodoroWorkDuration(
 }
 
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PomodoroBreakDuration(breakDuration: Int, onUpdateBreakDuration: (Int) -> Unit) {
+fun PomodoroBreakDuration(
+    breakDuration: Int,
+    onUpdateBreakDuration: (Int) -> Unit,
+    showCustomKeyboard: MutableState<Boolean>,
+    currentSetting: MutableState<SettingType?>
+) {
     val expanded = remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val customValue = remember { mutableStateOf("") }
 
     Row(
         modifier = Modifier
@@ -243,43 +266,25 @@ fun PomodoroBreakDuration(breakDuration: Int, onUpdateBreakDuration: (Int) -> Un
                     }
                 }
                 DropdownMenuItem(onClick = {
-                    onUpdateBreakDuration(-1)
                     expanded.value = false
+                    currentSetting.value = SettingType.BreakDuration
+                    showCustomKeyboard.value = true
                 }) {
                     Text(text = stringResource(R.string.custom_label))
                 }
             }
         }
     }
-    if (breakDuration == -1) {
-        TextField(
-            value = customValue.value,
-            onValueChange = { customValue.value = it },
-            label = { Text(text = stringResource(R.string.custom_value_label)) },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    keyboardController?.hide()
-                    focusManager.clearFocus()
-                    val newDuration = customValue.value.toIntOrNull() ?: 5
-                    onUpdateBreakDuration(newDuration)
-                    customValue.value = ""
-                }
-            )
-        )
-    }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PomodoroLongBreakDuration(longBreakDuration: Int, onUpdateLongBreakDuration: (Int) -> Unit) {
+fun PomodoroLongBreakDuration(
+    longBreakDuration: Int,
+    onUpdateLongBreakDuration: (Int) -> Unit,
+    showCustomKeyboard: MutableState<Boolean>,
+    currentSetting: MutableState<SettingType?>
+) {
     val expanded = remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val customValue = remember { mutableStateOf("") }
 
     Row(
         modifier = Modifier
@@ -304,46 +309,26 @@ fun PomodoroLongBreakDuration(longBreakDuration: Int, onUpdateLongBreakDuration:
                     }
                 }
                 DropdownMenuItem(onClick = {
-                    onUpdateLongBreakDuration(-1)
                     expanded.value = false
+                    currentSetting.value = SettingType.LongBreakDuration
+                    showCustomKeyboard.value = true
                 }) {
                     Text(text = stringResource(R.string.custom_label))
                 }
             }
         }
     }
-    if (longBreakDuration == -1) {
-        TextField(
-            value = customValue.value,
-            onValueChange = { customValue.value = it },
-            label = { Text(text = stringResource(R.string.custom_value_label)) },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    keyboardController?.hide()
-                    focusManager.clearFocus()
-                    val newDuration = customValue.value.toIntOrNull() ?: 15
-                    onUpdateLongBreakDuration(newDuration)
-                    customValue.value = ""
-                }
-            )
-        )
-    }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
+
 @Composable
 fun PomodoroCyclesBeforeLongBreak(
     cyclesBeforeLongBreak: Int,
-    onUpdateCyclesBeforeLongBreak: (Int) -> Unit
+    onUpdateCyclesBeforeLongBreak: (Int) -> Unit,
+    showCustomKeyboard: MutableState<Boolean>,
+    currentSetting: MutableState<SettingType?>
 ) {
     val expanded = remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val customValue = remember { mutableStateOf("") }
 
     Row(
         modifier = Modifier
@@ -358,45 +343,27 @@ fun PomodoroCyclesBeforeLongBreak(
                 modifier = Modifier.clickable { expanded.value = true }
             )
             DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }) {
-                val commonCycles = listOf(2, 3, 4)
-                commonCycles.forEach { cycles ->
+                val commonDurations = listOf(2, 3, 4)
+                commonDurations.forEach { duration ->
                     DropdownMenuItem(onClick = {
-                        onUpdateCyclesBeforeLongBreak(cycles)
+                        onUpdateCyclesBeforeLongBreak(duration)
                         expanded.value = false
                     }) {
-                        Text(text = cycles.toString())
+                        Text(text = duration.toString())
                     }
                 }
                 DropdownMenuItem(onClick = {
-                    onUpdateCyclesBeforeLongBreak(-1)
                     expanded.value = false
+                    currentSetting.value = SettingType.CyclesBeforeLongBreak
+                    showCustomKeyboard.value = true
                 }) {
                     Text(text = stringResource(R.string.custom_label))
                 }
             }
         }
     }
-    if (cyclesBeforeLongBreak == -1) {
-        TextField(
-            value = customValue.value,
-            onValueChange = { customValue.value = it },
-            label = { Text(text = stringResource(R.string.custom_value_label)) },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    keyboardController?.hide()
-                    focusManager.clearFocus()
-                    val newDuration = customValue.value.toIntOrNull() ?: 4
-                    onUpdateCyclesBeforeLongBreak(newDuration)
-                    customValue.value = ""
-                }
-            )
-        )
-    }
 }
+
 
 @Composable
 fun DarkModeSetting(darkModeState: Boolean, onUpdateDarkMode: (Boolean) -> Unit) {
