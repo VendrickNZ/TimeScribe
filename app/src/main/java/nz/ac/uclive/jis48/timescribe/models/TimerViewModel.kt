@@ -10,11 +10,11 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import android.provider.Settings as AndroidSettings
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -22,9 +22,11 @@ import nz.ac.uclive.jis48.timescribe.R
 import nz.ac.uclive.jis48.timescribe.data.*
 import nz.ac.uclive.jis48.timescribe.utils.AlarmReceiver
 import java.util.*
+import android.provider.Settings as AndroidSettings
 
-class TimerViewModel(private val settingsViewModel: SettingsViewModel,
-                    private val timerRepository: TimerRepository
+class TimerViewModel(
+    private val settingsViewModel: SettingsViewModel,
+    private val timerRepository: TimerRepository
 ) : ViewModel() {
 
     enum class TimerState {
@@ -33,7 +35,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
 
     private var startTime: Long = 0
     private var timerJob: Job? = null
-    private val timeElapsed: MutableState<Int> = mutableStateOf(0)
+    private val timeElapsed: MutableState<Int> = mutableIntStateOf(0)
     var timerState: MutableState<TimerState> = mutableStateOf(TimerState.IDLE)
     private val settings: MutableState<Settings> = mutableStateOf(Settings())
     private var currentCycle: Int = 0
@@ -72,19 +74,25 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
             }
         }
         resetPauseDuration()
-        val notifyTimeInMillis = System.currentTimeMillis() + (settings.value.workDuration * 60 * 1000)
+        val notifyTimeInMillis =
+            System.currentTimeMillis() + (settings.value.workDuration * 60 * 1000)
         scheduleAlarm(context, notifyTimeInMillis)
         startTime = System.currentTimeMillis()
         startDate = Date()
-        timerState.value = TimerState.WORK
-        lastNonIdleState = timerState.value
+        if (lastNonIdleState == TimerState.WORK) {
+            timerState.value = TimerState.WORK
+        } else {
+            timerState.value = lastNonIdleState ?: TimerState.WORK
+        }
+
         timerJob = viewModelScope.launch {
             while (true) {
                 if (timerState.value == TimerState.WAITING_FOR_USER) {
                     delay(1000)
                     continue
                 }
-                val elapsedTime = ((System.currentTimeMillis() - startTime - totalPauseDuration) / 1000)
+                val elapsedTime =
+                    ((System.currentTimeMillis() - startTime - totalPauseDuration) / 1000)
                 Log.d("TimerViewModel", "Elapsed time: $elapsedTime")
                 updateElapsedTime(elapsedTime)
                 delay(1000)
@@ -105,6 +113,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                     )
                 }
             }
+
             TimerState.BREAK -> {
                 if (settings.value.breakDuration == 0 || elapsedTime < settings.value.breakDuration * 60) {
                     timeElapsed.value = elapsedTime.toInt()
@@ -112,6 +121,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                     onStateTransition(TimerState.WORK)
                 }
             }
+
             TimerState.LONG_BREAK -> {
                 if (settings.value.longBreakDuration == 0 || elapsedTime < settings.value.longBreakDuration * 60) {
                     timeElapsed.value = elapsedTime.toInt()
@@ -119,6 +129,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                     onStateTransition(TimerState.WORK)
                 }
             }
+
             else -> {}
         }
     }
@@ -126,6 +137,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
     private fun onStateTransition(next: TimerState) {
         timeIsOverEvent.value = true
         nextState = next
+        lastNonIdleState = next
         timerState.value = TimerState.WAITING_FOR_USER
         if (next == TimerState.WORK && timerState.value == TimerState.LONG_BREAK) {
             currentCycle = 0
@@ -154,9 +166,11 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                 TimerState.LONG_BREAK -> settings.value.longBreakDuration * 60
                 else -> 0
             }
+
             val remainingTime = (totalDuration - timeElapsed.value) * 1000
             val notifyTimeInMillis = System.currentTimeMillis() + remainingTime
             scheduleAlarm(context, notifyTimeInMillis)
+
             pauseStartTime?.let {
                 val pauseEndTime = Date()
                 pauseIntervals.add(it to pauseEndTime)
@@ -176,6 +190,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
             timeElapsed.value = 0
             timerState.value = TimerState.IDLE
             currentCycle = 0
+            lastNonIdleState = TimerState.WORK // Resets to work state
         }
     }
 
@@ -198,6 +213,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         timeElapsed.value = 0
         timerState.value = TimerState.IDLE
         currentCycle = 0
+        lastNonIdleState = TimerState.WORK // Resets to work state
     }
 
     private fun resetPauseDuration() {
@@ -211,10 +227,15 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             action = "nz.ac.uclive.jis48.timescribe.ALARM_ACTION"
         }
-        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+        val pendingIntent =
+            PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 
         try {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent)
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                timeInMillis,
+                pendingIntent
+            )
         } catch (e: SecurityException) {
             Log.e("TimerViewModel", "Failed to schedule exact alarm: ${e.message}")
             // TODO: Optionally inform the user
@@ -272,17 +293,20 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
     }
 
     fun getProgress(): Float {
-        val totalDuration = when (timerState.value.takeIf { it != TimerState.IDLE } ?: lastNonIdleState) {
-            TimerState.WORK -> settings.value.workDuration * 60
-            TimerState.BREAK -> settings.value.breakDuration * 60
-            TimerState.LONG_BREAK -> settings.value.longBreakDuration * 60
-            else -> 0
-        }
+        val totalDuration =
+            when (timerState.value.takeIf { it != TimerState.IDLE } ?: lastNonIdleState) {
+                TimerState.WORK -> settings.value.workDuration * 60
+                TimerState.BREAK -> settings.value.breakDuration * 60
+                TimerState.LONG_BREAK -> settings.value.longBreakDuration * 60
+                else -> 0
+            }
         return if (totalDuration > 0) timeElapsed.value.toFloat() / totalDuration else 0f
     }
 
     fun getCurrentStateDuration(): String {
-        return when (if (timerState.value == TimerState.IDLE && timeElapsedState != 0) lastNonIdleState else timerState.value) {
+        val currentState =
+            if (timerState.value == TimerState.IDLE) lastNonIdleState else timerState.value
+        return when (currentState) {
             TimerState.WORK -> "Work: ${settings.value.workDuration} mins"
             TimerState.BREAK -> "Break: ${settings.value.breakDuration} mins"
             TimerState.LONG_BREAK -> "Long Break: ${settings.value.longBreakDuration} mins"
@@ -298,6 +322,7 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
         resetPauseDuration()
         startTime = System.currentTimeMillis()
         timerState.value = nextState ?: TimerState.IDLE
+        lastNonIdleState = timerState.value
         nextState = null
         timeElapsed.value = 0
     }
@@ -310,9 +335,10 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
                     .setTitle(context.getString(R.string.permission_required_title))
                     .setMessage(context.getString(R.string.permission_required_message))
                     .setPositiveButton(context.getString(R.string.open_settings)) { _, _ ->
-                        val intent = Intent(AndroidSettings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                            data = Uri.parse("package:${context.packageName}")
-                        }
+                        val intent =
+                            Intent(AndroidSettings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                data = Uri.parse("package:${context.packageName}")
+                            }
                         context.startActivity(intent)
                     }
                     .setNegativeButton(context.getString(R.string.cancel_label), null)
@@ -320,7 +346,5 @@ class TimerViewModel(private val settingsViewModel: SettingsViewModel,
             }
         }
     }
-
-
 }
 
