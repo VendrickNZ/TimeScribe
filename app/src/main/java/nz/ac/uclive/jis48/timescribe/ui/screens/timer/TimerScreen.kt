@@ -48,7 +48,6 @@ import nz.ac.uclive.jis48.timescribe.ui.theme.LongBreakColorLight
 import nz.ac.uclive.jis48.timescribe.ui.theme.TimeScribeTheme
 import nz.ac.uclive.jis48.timescribe.ui.theme.WorkColorDark
 import nz.ac.uclive.jis48.timescribe.ui.theme.WorkColorLight
-import kotlin.concurrent.timer
 
 @Composable
 fun TimerScreen(viewModel: TimerViewModel) {
