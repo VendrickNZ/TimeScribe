@@ -309,12 +309,18 @@ class TimerViewModel(
     fun getCurrentStateDuration(): String {
         val currentState =
             if (timerState.value == TimerState.IDLE) lastNonIdleState else timerState.value
+
         return when (currentState) {
-            TimerState.WORK -> "Work: ${settings.value.workDuration} mins"
-            TimerState.BREAK -> "Break: ${settings.value.breakDuration} mins"
-            TimerState.LONG_BREAK -> "Long Break: ${settings.value.longBreakDuration} mins"
-            else -> "Work: ${settings.value.workDuration} mins"
+            TimerState.WORK -> formatDuration("Work", settings.value.workDuration)
+            TimerState.BREAK -> formatDuration("Break", settings.value.breakDuration)
+            TimerState.LONG_BREAK -> formatDuration("Long Break", settings.value.longBreakDuration)
+            else -> formatDuration("Work", settings.value.workDuration)
         }
+    }
+
+    private fun formatDuration(stateLabel: String, duration: Int): String {
+        val unit = if (duration == 1) "minute" else "minutes"
+        return "$stateLabel: $duration $unit"
     }
 
     fun getCurrentWorkDuration(): Int {
