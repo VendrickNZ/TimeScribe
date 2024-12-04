@@ -49,7 +49,7 @@ class TimerViewModel(
     private val pauseIntervals = mutableListOf<Pair<Date, Date>>()
     private var totalWorkDuration: Long = 0
     private var lastNonIdleState: TimerState? = TimerState.WORK
-
+    var lastNonIdleStateForColour: TimerState = TimerState.WORK
     val sessions = mutableStateOf<List<Session>>(emptyList())
 
     init {
@@ -84,6 +84,7 @@ class TimerViewModel(
         } else {
             timerState.value = lastNonIdleState ?: TimerState.WORK
         }
+        lastNonIdleStateForColour = timerState.value
 
         timerJob = viewModelScope.launch {
             while (true) {
@@ -135,6 +136,7 @@ class TimerViewModel(
     }
 
     private fun onStateTransition(next: TimerState) {
+        lastNonIdleStateForColour = next
         timeIsOverEvent.value = true
         nextState = next
         lastNonIdleState = next
@@ -153,6 +155,7 @@ class TimerViewModel(
         if (timerState.value == TimerState.WORK || timerState.value == TimerState.BREAK || timerState.value == TimerState.LONG_BREAK) {
             cancelAlarm(context)
             lastNonIdleState = timerState.value
+            lastNonIdleStateForColour = timerState.value
             pauseStartTime = Date()
             timerState.value = TimerState.IDLE
         }
@@ -177,6 +180,8 @@ class TimerViewModel(
                 totalPauseDuration += pauseEndTime.time - it.time
             }
             timerState.value = lastNonIdleState ?: TimerState.WORK
+            lastNonIdleStateForColour = timerState.value
+
         }
     }
 
@@ -250,7 +255,6 @@ class TimerViewModel(
         alarmManager.cancel(pendingIntent)
     }
 
-
     fun timeIsOverHandled() {
         timeIsOverEvent.value = false
     }
@@ -261,7 +265,6 @@ class TimerViewModel(
         }
         context.startService(intent)
     }
-
 
     private fun saveSession() {
         val session = Session(

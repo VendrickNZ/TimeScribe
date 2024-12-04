@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -27,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -46,6 +48,7 @@ import nz.ac.uclive.jis48.timescribe.ui.theme.LongBreakColorLight
 import nz.ac.uclive.jis48.timescribe.ui.theme.TimeScribeTheme
 import nz.ac.uclive.jis48.timescribe.ui.theme.WorkColorDark
 import nz.ac.uclive.jis48.timescribe.ui.theme.WorkColorLight
+import kotlin.concurrent.timer
 
 @Composable
 fun TimerScreen(viewModel: TimerViewModel) {
@@ -60,12 +63,14 @@ fun TimerScreen(viewModel: TimerViewModel) {
 
     val isLightTheme = MaterialTheme.colors.isLight
 
-    val timerStateColor = when (viewModel.timerState.value) {
+    val timerStateColor = when (viewModel.lastNonIdleStateForColour) {
         TimerViewModel.TimerState.WORK -> if (isLightTheme) WorkColorLight else WorkColorDark
         TimerViewModel.TimerState.BREAK -> if (isLightTheme) BreakColorLight else BreakColorDark
         TimerViewModel.TimerState.LONG_BREAK -> if (isLightTheme) LongBreakColorLight else LongBreakColorDark
         else -> MaterialTheme.colors.onBackground
     }
+
+    val buttonTextColour = if (isLightTheme) Color.Black else Color.White
 
     if (showDialog.value) {
         AlertDialog(
@@ -140,7 +145,12 @@ fun TimerScreen(viewModel: TimerViewModel) {
             ) {
                 when (viewModel.timerState.value) {
                     TimerViewModel.TimerState.WAITING_FOR_USER -> {
-                        Button(onClick = { viewModel.continueToNextState() }) {
+                        Button(
+                            onClick = { viewModel.continueToNextState() },
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = timerStateColor,
+                                contentColor = buttonTextColour
+                            )) {
                             val startLabel = stringResource(R.string.start_label)
                             var nextStateLabel = viewModel.nextState.toString()
                             if (viewModel.nextState == TimerViewModel.TimerState.LONG_BREAK) {
@@ -151,13 +161,19 @@ fun TimerScreen(viewModel: TimerViewModel) {
                         }
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        Button(onClick = { showResetDialog.value = true }) {
+                        Button(onClick = { showResetDialog.value = true },
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = timerStateColor,
+                                contentColor = buttonTextColour
+                            )) {
                             Text(text = stringResource(R.string.reset_button))
                         }
                         if (showResetDialog.value) {
                             ConfirmActionDialog(
                                 title = stringResource(R.string.reset_timer_label),
                                 message = stringResource(R.string.are_you_sure_reset_timer_label),
+                                timerStateColor = timerStateColor,
+                                buttonTextColour = buttonTextColour,
                                 onConfirm = { viewModel.resetTimer(context) },
                                 onDismiss = { showResetDialog.value = false }
                             )
@@ -165,32 +181,50 @@ fun TimerScreen(viewModel: TimerViewModel) {
 
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        Button(onClick = { showDialog.value = true }) {
+                        Button(onClick = { showDialog.value = true },
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = timerStateColor,
+                                contentColor = buttonTextColour
+                            )) {
                             Text(text = stringResource(R.string.stop_button))
                         }
                     }
 
                     TimerViewModel.TimerState.IDLE -> {
                         if (viewModel.timeElapsedState == 0) {
-                            Button(onClick = { viewModel.startTimer(context) }) {
+                            Button(onClick = { viewModel.startTimer(context) },
+                                colors = ButtonDefaults.buttonColors(
+                                    backgroundColor = timerStateColor,
+                                    contentColor = buttonTextColour
+                                )) {
                                 Text(text = stringResource(R.string.start_button))
                             }
                         } else {
                             Button(
                                 onClick = { viewModel.resumeTimer(context) },
-                                modifier = Modifier.width(125.dp)
+                                modifier = Modifier.width(125.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    backgroundColor = timerStateColor,
+                                    contentColor = buttonTextColour
+                                )
                             ) {
                                 Text(text = stringResource(R.string.resume_button))
                             }
                             Spacer(modifier = Modifier.width(8.dp)) // Adding a space between buttons
 
-                            Button(onClick = { showResetDialog.value = true }) {
+                            Button(onClick = { showResetDialog.value = true },
+                                colors = ButtonDefaults.buttonColors(
+                                    backgroundColor = timerStateColor,
+                                    contentColor = buttonTextColour
+                                )) {
                                 Text(text = stringResource(R.string.reset_button))
                             }
                             if (showResetDialog.value) {
                                 ConfirmActionDialog(
                                     title = stringResource(R.string.reset_timer_label),
                                     message = stringResource(R.string.are_you_sure_reset_timer_label),
+                                    timerStateColor = timerStateColor,
+                                    buttonTextColour = buttonTextColour,
                                     onConfirm = { viewModel.resetTimer(context) },
                                     onDismiss = { showResetDialog.value = false }
                                 )
@@ -198,14 +232,22 @@ fun TimerScreen(viewModel: TimerViewModel) {
 
                             Spacer(modifier = Modifier.width(8.dp)) // Adding a space between buttons
 
-                            Button(onClick = { showDialog.value = true }) {
+                            Button(onClick = { showDialog.value = true },
+                                colors = ButtonDefaults.buttonColors(
+                                    backgroundColor = timerStateColor,
+                                    contentColor = buttonTextColour
+                                )) {
                                 Text(text = stringResource(R.string.stop_button))
                             }
                         }
                     }
 
                     TimerViewModel.TimerState.WORK, TimerViewModel.TimerState.BREAK, TimerViewModel.TimerState.LONG_BREAK -> {
-                        Button(onClick = { viewModel.pauseTimer(context) }) {
+                        Button(onClick = { viewModel.pauseTimer(context) },
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = timerStateColor,
+                                contentColor = buttonTextColour
+                            )) {
                             Text(text = stringResource(R.string.pause_button))
                         }
                     }
@@ -220,6 +262,8 @@ fun TimerScreen(viewModel: TimerViewModel) {
 fun ConfirmActionDialog(
     title: String,
     message: String,
+    timerStateColor: Color,
+    buttonTextColour: Color,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -231,14 +275,21 @@ fun ConfirmActionDialog(
             Button(onClick = {
                 onConfirm()
                 onDismiss()
-            }) {
-                Text(text = stringResource(R.string.yes_label))
-            }
+            },
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = timerStateColor,
+                    contentColor = buttonTextColour
+                )) {
+                Text(text = stringResource(R.string.yes_label))}
         },
+
         dismissButton = {
-            Button(onClick = { onDismiss() }) {
-                Text(text = stringResource(R.string.no_label))
-            }
+            Button(onClick = { onDismiss() },
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = timerStateColor,
+                    contentColor = buttonTextColour
+                )) {
+                Text(text = stringResource(R.string.no_label))}
         }
     )
 }
