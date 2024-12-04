@@ -164,10 +164,6 @@ fun SettingsScreen(
                     SettingType.CyclesBeforeLongBreak -> updateCyclesBeforeLongBreak(newValue)
                     else -> {}
                 }
-                Log.d(
-                    "SettingsScreen",
-                    "New value: $newValue currentSetting: ${currentSetting.value}"
-                )
                 customValue.value = ""
                 showCustomKeyboard.value = false
                 currentSetting.value = null
@@ -232,7 +228,6 @@ fun PomodoroWorkDuration(
         }
     }
 }
-
 
 @Composable
 fun PomodoroBreakDuration(
@@ -320,7 +315,6 @@ fun PomodoroLongBreakDuration(
     }
 }
 
-
 @Composable
 fun PomodoroCyclesBeforeLongBreak(
     cyclesBeforeLongBreak: Int,
@@ -364,7 +358,6 @@ fun PomodoroCyclesBeforeLongBreak(
     }
 }
 
-
 @Composable
 fun DarkModeSetting(darkModeState: Boolean, onUpdateDarkMode: (Boolean) -> Unit) {
     Row(
@@ -381,7 +374,6 @@ fun DarkModeSetting(darkModeState: Boolean, onUpdateDarkMode: (Boolean) -> Unit)
         )
     }
 }
-
 
 class SettingsFragment : Fragment() {
     private val viewModel: SettingsViewModel by viewModels()
