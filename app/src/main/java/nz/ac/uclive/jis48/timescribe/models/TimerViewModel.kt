@@ -308,8 +308,13 @@ class TimerViewModel(
 
     fun getCurrentStateDuration(): String {
         val currentState =
-            if (timerState.value == TimerState.IDLE) lastNonIdleState else timerState.value
-
+            if (timerState.value == TimerState.IDLE) {
+                lastNonIdleState
+            } else if (timerState.value == TimerState.WAITING_FOR_USER) {
+                nextState ?: lastNonIdleState
+            } else {
+                timerState.value
+            }
         return when (currentState) {
             TimerState.WORK -> formatDuration("Work", settings.value.workDuration)
             TimerState.BREAK -> formatDuration("Break", settings.value.breakDuration)
