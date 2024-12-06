@@ -52,7 +52,7 @@ import nz.ac.uclive.jis48.timescribe.ui.theme.WorkColorLight
 @Composable
 fun TimerScreen(viewModel: TimerViewModel) {
     val context = LocalContext.current
-    val showDialog = remember { mutableStateOf(false) }
+    val showStopDialog = remember { mutableStateOf(false) }
     val showResetDialog = remember { mutableStateOf(false) }
     val currentStateDuration = viewModel.getCurrentStateDuration()
     val workDuration = viewModel.getCurrentWorkDuration()
@@ -71,48 +71,25 @@ fun TimerScreen(viewModel: TimerViewModel) {
 
     val buttonTextColour = if (isLightTheme) Color.Black else Color.White
 
-    if (showDialog.value) {
-        AlertDialog(
-            title = {
-                Text(
-                    text = stringResource(R.string.stop_timer_label),
-                    color = MaterialTheme.colors.onSurface
-                )
+    if (showStopDialog.value) {
+        ConfirmActionDialog(
+            title = stringResource(R.string.stop_timer_label),
+            message = stringResource(R.string.are_you_sure_stop_timer_label),
+            timerStateColor = timerStateColor,
+            buttonTextColour = buttonTextColour,
+            onConfirm = {
+                viewModel.stopTimer(context)
+                showStopDialog.value = false
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.session_saved_toast_label),
+                    Toast.LENGTH_SHORT
+                ).show()
             },
-            text = {
-                Text(
-                    text = stringResource(R.string.are_you_sure_stop_timer_label),
-                    color = MaterialTheme.colors.onSurface
-                )
-            },
-            onDismissRequest = { showDialog.value = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.stopTimer(context)
-                    showDialog.value = false
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.session_saved_toast_label),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }) {
-                    Text(
-                        text = stringResource(R.string.yes_label),
-                        color = MaterialTheme.colors.primary
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDialog.value = false }) {
-                    Text(
-                        text = stringResource(R.string.no_label),
-                        color = MaterialTheme.colors.primary
-                    )
-                }
-            },
-            backgroundColor = MaterialTheme.colors.surface
+            onDismiss = { showStopDialog.value = false }
         )
     }
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -180,7 +157,7 @@ fun TimerScreen(viewModel: TimerViewModel) {
 
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        Button(onClick = { showDialog.value = true },
+                        Button(onClick = { showStopDialog.value = true },
                             colors = ButtonDefaults.buttonColors(
                                 backgroundColor = timerStateColor,
                                 contentColor = buttonTextColour
@@ -231,7 +208,7 @@ fun TimerScreen(viewModel: TimerViewModel) {
 
                             Spacer(modifier = Modifier.width(8.dp)) // Adding a space between buttons
 
-                            Button(onClick = { showDialog.value = true },
+                            Button(onClick = { showStopDialog.value = true },
                                 colors = ButtonDefaults.buttonColors(
                                     backgroundColor = timerStateColor,
                                     contentColor = buttonTextColour
