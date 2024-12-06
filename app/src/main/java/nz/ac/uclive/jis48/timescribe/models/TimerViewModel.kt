@@ -196,6 +196,7 @@ class TimerViewModel(
             timerState.value = TimerState.IDLE
             currentCycle = 0
             lastNonIdleState = TimerState.WORK // Resets to work state
+            lastNonIdleStateForColour = TimerState.WORK
         }
     }
 
