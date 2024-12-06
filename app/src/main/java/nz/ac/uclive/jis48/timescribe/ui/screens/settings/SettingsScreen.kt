@@ -158,11 +158,12 @@ fun SettingsScreen(
             },
             onConfirm = {
                 val newValue = customValue.value.toIntOrNull() ?: 0
+                val validatedNewValue = newValue.coerceIn(0, 300)
                 when (currentSetting.value) {
-                    SettingType.WorkDuration -> updateWorkDuration(newValue)
-                    SettingType.BreakDuration -> updateBreakDuration(newValue)
-                    SettingType.LongBreakDuration -> updateLongBreakDuration(newValue)
-                    SettingType.CyclesBeforeLongBreak -> updateCyclesBeforeLongBreak(newValue)
+                    SettingType.WorkDuration -> updateWorkDuration(validatedNewValue)
+                    SettingType.BreakDuration -> updateBreakDuration(validatedNewValue)
+                    SettingType.LongBreakDuration -> updateLongBreakDuration(validatedNewValue)
+                    SettingType.CyclesBeforeLongBreak -> updateCyclesBeforeLongBreak(validatedNewValue)
                     else -> {}
                 }
                 customValue.value = ""

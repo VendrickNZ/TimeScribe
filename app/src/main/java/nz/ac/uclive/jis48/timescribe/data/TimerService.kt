@@ -80,9 +80,6 @@ class TimerService : Service() {
         vib.vibrate(VibrationEffect.createOneShot(1000, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
-
-
-
     override fun onDestroy() {
         // TODO: Stop your timer logic here
         wakeLock?.release()
