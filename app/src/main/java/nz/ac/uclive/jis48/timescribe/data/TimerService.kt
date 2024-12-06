@@ -31,7 +31,7 @@ class TimerService : Service() {
         startForeground(NOTIFICATION_ID, notification)
 
         if (intent?.action != ACTION_NOTIFY_TIME_IS_OVER) {
-            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            val powerManager = getSystemService(POWER_SERVICE) as PowerManager
             wakeLock = powerManager.newWakeLock(
                 PowerManager.PARTIAL_WAKE_LOCK,
                 "TimerService::WakeLock"
@@ -64,13 +64,13 @@ class TimerService : Service() {
     }
 
     private fun notifyTimeIsOver() {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID, createTimerFinishedNotification())
 
         // a lot of deprecated methods round these parts
         val vib = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vibratorManager =
-                getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
             vibratorManager.defaultVibrator
         } else {
             @Suppress("DEPRECATION")
