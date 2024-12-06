@@ -24,6 +24,7 @@ import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Switch
+import androidx.compose.material.SwitchDefaults
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -370,7 +371,13 @@ fun DarkModeSetting(darkModeState: Boolean, onUpdateDarkMode: (Boolean) -> Unit)
         Switch(
             checked = darkModeState,
             onCheckedChange = { onUpdateDarkMode(it) },
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(20.dp),
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colors.primary,
+                checkedTrackColor = MaterialTheme.colors.primaryVariant,
+                uncheckedThumbColor = MaterialTheme.colors.secondary,
+                uncheckedTrackColor = MaterialTheme.colors.secondaryVariant
+            )
         )
     }
 }
