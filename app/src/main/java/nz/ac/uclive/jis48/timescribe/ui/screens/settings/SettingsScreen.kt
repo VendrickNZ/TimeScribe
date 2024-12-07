@@ -158,7 +158,7 @@ fun SettingsScreen(
             },
             onConfirm = {
                 val newValue = customValue.value.toIntOrNull() ?: 0
-                val validatedNewValue = newValue.coerceIn(0, 300)
+                val validatedNewValue = newValue.coerceIn(1, 300)
                 when (currentSetting.value) {
                     SettingType.WorkDuration -> updateWorkDuration(validatedNewValue)
                     SettingType.BreakDuration -> updateBreakDuration(validatedNewValue)
