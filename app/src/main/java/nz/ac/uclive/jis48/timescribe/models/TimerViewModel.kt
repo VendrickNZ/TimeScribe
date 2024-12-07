@@ -74,9 +74,14 @@ class TimerViewModel(
             }
         }
         resetPauseDuration()
+
         val notifyTimeInMillis =
             System.currentTimeMillis() + (settings.value.workDuration * 60 * 1000)
-        scheduleAlarm(context, notifyTimeInMillis)
+
+        if (settings.value.workDuration != 0) {
+            scheduleAlarm(context, notifyTimeInMillis)
+        }
+
         startTime = System.currentTimeMillis()
         startDate = Date()
         if (lastNonIdleState == TimerState.WORK) {
