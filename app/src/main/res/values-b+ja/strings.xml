@@ -44,5 +44,6 @@
     <string name="open_settings">設定を開く</string>
     <string name="cancel_label">キャンセル</string>
     <string name="confirm_label">Confirm</string>
+    <string name="continue_label">Continue</string>
 
 </resources>

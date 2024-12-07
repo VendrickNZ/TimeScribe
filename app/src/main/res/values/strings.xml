@@ -44,6 +44,7 @@
     <string name="open_settings">Open Settings</string>
     <string name="cancel_label">Cancel</string>
     <string name="confirm_label">Confirm</string>
+    <string name="continue_label">Continue</string>
 
 
 </resources>
