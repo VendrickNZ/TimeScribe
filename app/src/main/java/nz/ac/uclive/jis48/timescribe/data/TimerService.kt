@@ -80,7 +80,6 @@ class TimerService : Service() {
     }
 
     override fun onDestroy() {
-        // TODO: Stop your timer logic here
         wakeLock?.release()
         wakeLock = null
         super.onDestroy()
