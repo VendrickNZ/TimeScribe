@@ -12,6 +12,7 @@ import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -20,18 +21,31 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import nz.ac.uclive.jis48.timescribe.R
 import nz.ac.uclive.jis48.timescribe.data.*
+import nz.ac.uclive.jis48.timescribe.ui.theme.BreakColorDark
+import nz.ac.uclive.jis48.timescribe.ui.theme.BreakColorLight
+import nz.ac.uclive.jis48.timescribe.ui.theme.LongBreakColorDark
+import nz.ac.uclive.jis48.timescribe.ui.theme.LongBreakColorLight
+import nz.ac.uclive.jis48.timescribe.ui.theme.WorkColorDark
+import nz.ac.uclive.jis48.timescribe.ui.theme.WorkColorLight
 import nz.ac.uclive.jis48.timescribe.utils.AlarmReceiver
 import java.util.*
 import android.provider.Settings as AndroidSettings
 
 class TimerViewModel(
-    private val settingsViewModel: SettingsViewModel,
-    private val timerRepository: TimerRepository
+    private val settingsViewModel: SettingsViewModel, private val timerRepository: TimerRepository
 ) : ViewModel() {
 
     enum class TimerState {
         IDLE, WORK, BREAK, LONG_BREAK, WAITING_FOR_USER
     }
+
+    val currentStateInfo = StateInfo(
+        previousState = TimerState.WORK,
+        currentState = TimerState.WORK,
+        previousStateName = "Work",
+        currentStateName = "Work",
+        duration = 25
+    )
 
     private var startTime: Long = 0
     private var timerJob: Job? = null
@@ -48,8 +62,6 @@ class TimerViewModel(
     private var totalPauseDuration: Long = 0
     private val pauseIntervals = mutableListOf<Pair<Date, Date>>()
     private var totalWorkDuration: Long = 0
-    private var lastNonIdleState: TimerState? = TimerState.WORK
-    var lastNonIdleStateForColour: TimerState = TimerState.WORK
     val sessions = mutableStateOf<List<Session>>(emptyList())
 
     init {
@@ -84,13 +96,9 @@ class TimerViewModel(
 
         startTime = System.currentTimeMillis()
         startDate = Date()
-        if (lastNonIdleState == TimerState.WORK) {
+        if (currentStateInfo.currentState == TimerState.WORK) {
             timerState.value = TimerState.WORK
-        } else {
-            timerState.value = lastNonIdleState ?: TimerState.WORK
         }
-        lastNonIdleStateForColour = timerState.value
-
         timerJob = viewModelScope.launch {
             while (true) {
                 if (timerState.value == TimerState.WAITING_FOR_USER) {
@@ -141,16 +149,24 @@ class TimerViewModel(
     }
 
     private fun onStateTransition(next: TimerState) {
-        lastNonIdleStateForColour = next
-        timeIsOverEvent.value = true
+        currentStateInfo.previousState = currentStateInfo.currentState
+        currentStateInfo.previousStateName = currentStateInfo.currentStateName
+        currentStateInfo.currentState = next
+        currentStateInfo.currentStateName = getCurrentStateName(next)
+        currentStateInfo.duration = getStateDurationInt(next)
+
         nextState = next
-        lastNonIdleState = next
-        timerState.value = TimerState.WAITING_FOR_USER
         if (next == TimerState.WORK && timerState.value == TimerState.LONG_BREAK) {
             currentCycle = 0
         } else if (next != TimerState.WORK) {
             currentCycle++
         }
+        stateEndCleanup()
+    }
+
+    private fun stateEndCleanup() {
+        timeIsOverEvent.value = true
+        timerState.value = TimerState.WAITING_FOR_USER
         timeElapsed.value = 0
         startTime = System.currentTimeMillis()
         resetPauseDuration()
@@ -159,8 +175,6 @@ class TimerViewModel(
     fun pauseTimer(context: Context) {
         if (timerState.value == TimerState.WORK || timerState.value == TimerState.BREAK || timerState.value == TimerState.LONG_BREAK) {
             cancelAlarm(context)
-            lastNonIdleState = timerState.value
-            lastNonIdleStateForColour = timerState.value
             pauseStartTime = Date()
             timerState.value = TimerState.IDLE
         }
@@ -168,7 +182,7 @@ class TimerViewModel(
 
     fun resumeTimer(context: Context) {
         if (timerState.value == TimerState.IDLE) {
-            val totalDuration = when (lastNonIdleState) {
+            val totalDuration = when (currentStateInfo.currentState) {
                 TimerState.WORK -> settings.value.workDuration * 60
                 TimerState.BREAK -> settings.value.breakDuration * 60
                 TimerState.LONG_BREAK -> settings.value.longBreakDuration * 60
@@ -184,15 +198,16 @@ class TimerViewModel(
                 pauseIntervals.add(it to pauseEndTime)
                 totalPauseDuration += pauseEndTime.time - it.time
             }
-            timerState.value = lastNonIdleState ?: TimerState.WORK
-            lastNonIdleStateForColour = timerState.value
 
+            startTime = System.currentTimeMillis() - (timeElapsed.value * 1000) - totalPauseDuration
+
+            timerState.value = currentStateInfo.currentState
         }
     }
 
     fun resetTimer(context: Context) {
         cancelAlarm(context)
-        if (timerState.value == TimerState.IDLE) {
+        if (timerState.value == TimerState.IDLE || timerState.value == TimerState.WAITING_FOR_USER) {
             totalPauseDuration = 0
             pauseStartTime = null
             timerJob?.cancel()
@@ -200,8 +215,13 @@ class TimerViewModel(
             timeElapsed.value = 0
             timerState.value = TimerState.IDLE
             currentCycle = 0
-            lastNonIdleState = TimerState.WORK // Resets to work state
-            lastNonIdleStateForColour = TimerState.WORK
+
+
+            currentStateInfo.previousState = TimerState.IDLE
+            currentStateInfo.currentState = TimerState.WORK // Resets to work state
+            currentStateInfo.previousStateName = "Idle"
+            currentStateInfo.currentStateName = "Work"
+            nextState = TimerState.WORK
         }
     }
 
@@ -224,8 +244,7 @@ class TimerViewModel(
         timeElapsed.value = 0
         timerState.value = TimerState.IDLE
         currentCycle = 0
-        lastNonIdleState = TimerState.WORK // Resets to work state
-        lastNonIdleStateForColour = TimerState.WORK
+        currentStateInfo.currentState = TimerState.WORK // Resets to work state
     }
 
     private fun resetPauseDuration() {
@@ -244,9 +263,7 @@ class TimerViewModel(
 
         try {
             alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                timeInMillis,
-                pendingIntent
+                AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent
             )
         } catch (e: SecurityException) {
             Log.e("TimerViewModel", "Failed to schedule exact alarm: ${e.message}")
@@ -303,25 +320,24 @@ class TimerViewModel(
     }
 
     fun getProgress(): Float {
-        val totalDuration =
-            when (timerState.value.takeIf { it != TimerState.IDLE } ?: lastNonIdleState) {
-                TimerState.WORK -> settings.value.workDuration * 60
-                TimerState.BREAK -> settings.value.breakDuration * 60
-                TimerState.LONG_BREAK -> settings.value.longBreakDuration * 60
-                else -> 0
-            }
+        val totalDuration = when (timerState.value.takeIf { it != TimerState.IDLE }
+            ?: currentStateInfo.currentState) {
+            TimerState.WORK -> settings.value.workDuration * 60
+            TimerState.BREAK -> settings.value.breakDuration * 60
+            TimerState.LONG_BREAK -> settings.value.longBreakDuration * 60
+            else -> 0
+        }
         return if (totalDuration > 0) timeElapsed.value.toFloat() / totalDuration else 0f
     }
 
-    fun getCurrentStateDuration(): String {
-        val currentState =
-            if (timerState.value == TimerState.IDLE) {
-                lastNonIdleState
-            } else if (timerState.value == TimerState.WAITING_FOR_USER) {
-                nextState ?: lastNonIdleState
-            } else {
-                timerState.value
-            }
+    fun getCurrentStateDurationString(): String {
+        val currentState = if (timerState.value == TimerState.IDLE) {
+            currentStateInfo.currentState
+        } else if (timerState.value == TimerState.WAITING_FOR_USER) {
+            nextState ?: currentStateInfo.currentState
+        } else {
+            timerState.value
+        }
         return when (currentState) {
             TimerState.WORK -> formatDuration("Work", settings.value.workDuration)
             TimerState.BREAK -> formatDuration("Break", settings.value.breakDuration)
@@ -330,9 +346,37 @@ class TimerViewModel(
         }
     }
 
+    private fun getStateDurationInt(state: TimerState): Int {
+        return when (state) {
+            TimerState.WORK -> settings.value.workDuration
+            TimerState.BREAK -> settings.value.breakDuration
+            TimerState.LONG_BREAK -> settings.value.longBreakDuration
+            else -> 0
+        }
+    }
+
+    private fun getCurrentStateName(state: TimerState): String {
+        return when (state) {
+            TimerState.WORK -> "Work"
+            TimerState.BREAK -> "Break"
+            TimerState.LONG_BREAK -> "Long Break"
+            TimerState.IDLE -> "Idle"
+            TimerState.WAITING_FOR_USER -> "Waiting"
+        }
+    }
+
     private fun formatDuration(stateLabel: String, duration: Int): String {
         val unit = if (duration == 1) "minute" else "minutes"
         return "$stateLabel: $duration $unit"
+    }
+
+    fun colourForPreviousState(previousState: TimerState, isLightTheme: Boolean): Color {
+        return when (previousState) {
+            TimerState.WORK -> if (isLightTheme) WorkColorLight else WorkColorDark
+            TimerState.BREAK -> if (isLightTheme) BreakColorLight else BreakColorDark
+            TimerState.LONG_BREAK -> if (isLightTheme) LongBreakColorLight else LongBreakColorDark
+            else -> Color.Gray
+        }
     }
 
     fun getCurrentWorkDuration(): Int {
@@ -343,10 +387,12 @@ class TimerViewModel(
         resetPauseDuration()
         startTime = System.currentTimeMillis()
         timerState.value = nextState ?: TimerState.IDLE
-        lastNonIdleState = timerState.value
+        currentStateInfo.previousState = currentStateInfo.currentState
+        currentStateInfo.currentState = timerState.value
         nextState = null
         timeElapsed.value = 0
     }
+
 
     private fun checkAndRequestExactAlarmPermission(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -361,9 +407,7 @@ class TimerViewModel(
                                 data = Uri.parse("package:${context.packageName}")
                             }
                         context.startActivity(intent)
-                    }
-                    .setNegativeButton(context.getString(R.string.cancel_label), null)
-                    .show()
+                    }.setNegativeButton(context.getString(R.string.cancel_label), null).show()
             }
         }
     }
