@@ -35,8 +35,16 @@ class TimerViewModel(
     private val settingsViewModel: SettingsViewModel, private val timerRepository: TimerRepository
 ) : ViewModel() {
 
+    init {
+        viewModelScope.launch {
+            settingsViewModel.settingsFlow.collect { newSettings ->
+                settings.value = newSettings
+            }
+        }
+    }
+
     enum class TimerState {
-        IDLE, WORK, BREAK, LONG_BREAK, WAITING_FOR_USER
+        IDLE, WORK, BREAK, LONG_BREAK, WAITING_FOR_USER, CONTINUED_STATE
     }
 
     val currentStateInfo = StateInfo(
@@ -64,13 +72,7 @@ class TimerViewModel(
     private var totalWorkDuration: Long = 0
     val sessions = mutableStateOf<List<Session>>(emptyList())
 
-    init {
-        viewModelScope.launch {
-            settingsViewModel.settingsFlow.collect { newSettings ->
-                settings.value = newSettings
-            }
-        }
-    }
+
 
     val timeElapsedState: Int
         get() = timeElapsed.value
@@ -143,6 +145,10 @@ class TimerViewModel(
                     onStateTransition(TimerState.WORK)
                 }
             }
+            
+            TimerState.CONTINUED_STATE -> {
+                timeElapsed.value = ((System.currentTimeMillis() - startTime) / 1000).toInt()
+            }
 
             else -> {}
         }
@@ -173,7 +179,8 @@ class TimerViewModel(
     }
 
     fun pauseTimer(context: Context) {
-        if (timerState.value == TimerState.WORK || timerState.value == TimerState.BREAK || timerState.value == TimerState.LONG_BREAK) {
+        if (timerState.value == TimerState.WORK || timerState.value == TimerState.BREAK ||
+            timerState.value == TimerState.LONG_BREAK || timerState.value == TimerState.CONTINUED_STATE) {
             cancelAlarm(context)
             pauseStartTime = Date()
             timerState.value = TimerState.IDLE
@@ -362,6 +369,7 @@ class TimerViewModel(
             TimerState.LONG_BREAK -> "Long Break"
             TimerState.IDLE -> "Idle"
             TimerState.WAITING_FOR_USER -> "Waiting"
+            TimerState.CONTINUED_STATE -> "Continued Work"
         }
     }
 
@@ -393,6 +401,12 @@ class TimerViewModel(
         timeElapsed.value = 0
     }
 
+    fun startContinuedState() {
+        resetPauseDuration()
+        timeElapsed.value = currentStateInfo.duration * 60 + timeElapsed.value
+        timerState.value = TimerState.CONTINUED_STATE
+        startTime = System.currentTimeMillis() - (timeElapsed.value * 1000)
+    }
 
     private fun checkAndRequestExactAlarmPermission(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

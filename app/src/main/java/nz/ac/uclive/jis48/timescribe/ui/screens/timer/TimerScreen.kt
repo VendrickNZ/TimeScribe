@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.AlertDialog
@@ -67,7 +68,6 @@ fun TimerScreen(viewModel: TimerViewModel) {
         isLightTheme = isLightTheme
     )
 
-
     val timerStateColour = when (viewModel.currentStateInfo.currentState) {
         TimerState.WORK -> if (isLightTheme) WorkColorLight else WorkColorDark
         TimerState.BREAK -> if (isLightTheme) BreakColorLight else BreakColorDark
@@ -101,16 +101,27 @@ fun TimerScreen(viewModel: TimerViewModel) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (workDuration != 0) {
+            if (viewModel.timerState.value != TimerState.CONTINUED_STATE) {
+                if (workDuration != 0) {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = currentStateDurationString,
+                        style = MaterialTheme.typography.h6,
+                        color = timerStateColour
+                    )
+                    LinearProgressIndicator(
+                        progress = progress,
+                        color = timerStateColour,
+                        modifier = if (isLandscape) Modifier.width(450.dp) else Modifier.width(225.dp)
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = currentStateDurationString,
+                    text = "Continuing ${viewModel.currentStateInfo.previousStateName}",
                     style = MaterialTheme.typography.h6,
-                    color = timerStateColour
-                )
-                LinearProgressIndicator(
-                    progress = progress,
-                    color = timerStateColour,
-                    modifier = if (isLandscape) Modifier.width(450.dp) else Modifier.width(225.dp)
+                    color = previousStateColour
                 )
             }
 
@@ -149,9 +160,12 @@ fun TimerScreen(viewModel: TimerViewModel) {
                             Text(text = stringResource(R.string.reset_button))
                         }
                         if (showResetDialog.value) {
+                            var dialogColour =
+                                if (viewModel.timerState.value == TimerState.CONTINUED_STATE) previousStateColour
+                                else timerStateColour
                             ConfirmActionDialog(title = stringResource(R.string.reset_timer_label),
                                 message = stringResource(R.string.are_you_sure_reset_timer_label),
-                                timerStateColour = timerStateColour,
+                                timerStateColour = dialogColour,
                                 buttonTextColour = buttonTextColour,
                                 onConfirm = { viewModel.resetTimer(context) },
                                 onDismiss = { showResetDialog.value = false })
@@ -203,9 +217,12 @@ fun TimerScreen(viewModel: TimerViewModel) {
                                 Text(text = stringResource(R.string.reset_button))
                             }
                             if (showResetDialog.value) {
+                                var dialogColour =
+                                    if (viewModel.timerState.value == TimerState.CONTINUED_STATE) previousStateColour
+                                    else timerStateColour
                                 ConfirmActionDialog(title = stringResource(R.string.reset_timer_label),
                                     message = stringResource(R.string.are_you_sure_reset_timer_label),
-                                    timerStateColour = timerStateColour,
+                                    timerStateColour = dialogColour,
                                     buttonTextColour = buttonTextColour,
                                     onConfirm = { viewModel.resetTimer(context) },
                                     onDismiss = { showResetDialog.value = false })
@@ -235,6 +252,19 @@ fun TimerScreen(viewModel: TimerViewModel) {
                             Text(text = stringResource(R.string.pause_button))
                         }
                     }
+
+                    TimerState.CONTINUED_STATE -> {
+                        Button(
+                            onClick = { viewModel.pauseTimer(context) },
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = previousStateColour,
+                                contentColor = buttonTextColour
+                            )
+                        ) {
+                            Text(text = stringResource(R.string.pause_button))
+
+                        }
+                    }
                 }
             }
             Row(
@@ -242,7 +272,7 @@ fun TimerScreen(viewModel: TimerViewModel) {
             ) {
                 if (viewModel.timerState.value == TimerState.WAITING_FOR_USER) {
                     Button(
-                        onClick = { showResetDialog.value = true },
+                        onClick = { viewModel.startContinuedState() },
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = previousStateColour, contentColor = buttonTextColour
                         )
