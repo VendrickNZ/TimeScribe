@@ -72,6 +72,7 @@ fun TimerScreen(viewModel: TimerViewModel) {
         TimerState.WORK -> if (isLightTheme) WorkColorLight else WorkColorDark
         TimerState.BREAK -> if (isLightTheme) BreakColorLight else BreakColorDark
         TimerState.LONG_BREAK -> if (isLightTheme) LongBreakColorLight else LongBreakColorDark
+        TimerState.CONTINUED_STATE -> previousStateColour
         else -> MaterialTheme.colors.onBackground
     }
 
