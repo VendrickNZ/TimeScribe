@@ -22,6 +22,7 @@ class SettingsRepository(private val context: Context) {
         val LONG_BREAK_DURATION_KEY = intPreferencesKey("long_break_duration")
         val AUTO_SAVE_KEY = booleanPreferencesKey("auto_save")
         val DARK_MODE_KEY = booleanPreferencesKey("dark_mode")
+        val DEVELOPER_MODE_KEY = booleanPreferencesKey("developer_mode")
 
     }
 
@@ -33,6 +34,7 @@ class SettingsRepository(private val context: Context) {
             preferences[LONG_BREAK_DURATION_KEY] = settings.longBreakDuration
             preferences[CYCLES_BEFORE_LONG_BREAK_KEY] = settings.cyclesBeforeLongBreak
             preferences[DARK_MODE_KEY] = settings.darkMode
+            preferences[DEVELOPER_MODE_KEY] = settings.developerMode
         }
         Log.d("SettingsRepository", "Settings saved successfully")
     }
@@ -47,12 +49,14 @@ class SettingsRepository(private val context: Context) {
             Log.d(CYCLES_BEFORE_LONG_BREAK_KEY.toString(), preferences[CYCLES_BEFORE_LONG_BREAK_KEY].toString())
             Log.d(AUTO_SAVE_KEY.toString(), preferences[AUTO_SAVE_KEY].toString())
             Log.d(DARK_MODE_KEY.toString(), preferences[DARK_MODE_KEY].toString())
+            Log.d(DEVELOPER_MODE_KEY.toString(), preferences[DEVELOPER_MODE_KEY].toString())
             Settings(
                 workDuration = preferences[WORK_DURATION_KEY] ?: 25,
                 breakDuration = preferences[BREAK_DURATION_KEY] ?: 5,
                 longBreakDuration = preferences[LONG_BREAK_DURATION_KEY] ?: 15,
                 cyclesBeforeLongBreak = preferences[CYCLES_BEFORE_LONG_BREAK_KEY] ?: 4,
-                darkMode = preferences[DARK_MODE_KEY] ?: false
+                darkMode = preferences[DARK_MODE_KEY] == true,
+                developerMode = preferences[DEVELOPER_MODE_KEY] == true
             )
         }
 }

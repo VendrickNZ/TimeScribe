@@ -102,6 +102,11 @@ fun SettingsScreen(
         viewModel.saveSettings(newSettings)
     }
 
+    val toggleDeveloperMode: () -> Unit = {
+        val newSettings = settings.copy(developerMode = !settings.developerMode)
+        viewModel.saveSettings(newSettings)
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -146,6 +151,11 @@ fun SettingsScreen(
                 modifier = if (isLandscape) Modifier.align(Alignment.CenterHorizontally) else Modifier
             )
             DarkModeSetting(darkModeState = settings.darkMode, onUpdateDarkMode = updateDarkMode)
+            DeveloperModeSetting(
+                developerModeState = settings.developerMode,
+                onToggleDeveloperMode = toggleDeveloperMode
+            )
+
         }
         CustomKeyboardOverlay(
             visible = showCustomKeyboard.value,
@@ -382,6 +392,30 @@ fun DarkModeSetting(darkModeState: Boolean, onUpdateDarkMode: (Boolean) -> Unit)
         )
     }
 }
+
+@Composable
+fun DeveloperModeSetting(developerModeState: Boolean, onToggleDeveloperMode: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = stringResource(R.string.developer_mode_label))
+        Switch(
+            checked = developerModeState,
+            onCheckedChange = { onToggleDeveloperMode() },
+            modifier = Modifier.size(20.dp),
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colors.primary,
+                checkedTrackColor = MaterialTheme.colors.primaryVariant,
+                uncheckedThumbColor = MaterialTheme.colors.secondary,
+                uncheckedTrackColor = MaterialTheme.colors.secondaryVariant
+            )
+        )
+    }
+}
+
 
 class SettingsFragment : Fragment() {
     private val viewModel: SettingsViewModel by viewModels()
