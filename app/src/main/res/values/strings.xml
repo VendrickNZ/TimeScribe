@@ -45,6 +45,7 @@
     <string name="cancel_label">Cancel</string>
     <string name="confirm_label">Confirm</string>
     <string name="continue_label">Continue</string>
+    <string name="developer_mode_label">Developer Mode</string>
 
 
 </resources>
