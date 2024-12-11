@@ -55,6 +55,8 @@ class TimerViewModel(
         duration = 25
     )
 
+    var nextState: Pair<TimerState, String>? = Pair(TimerState.WORK, "Work")
+
     private var startTime: Long = 0
     private var timerJob: Job? = null
     private val timeElapsed: MutableState<Int> = mutableIntStateOf(0)
@@ -62,7 +64,7 @@ class TimerViewModel(
     private val settings: MutableState<Settings> = mutableStateOf(Settings())
     private var currentCycle: Int = 0
     val timeIsOverEvent = MutableLiveData<Boolean>()
-    var nextState: TimerState? = null
+    var wouldBeNextState: TimerState = TimerState.WORK
 
     private var startDate: Date? = null
     private var endDate: Date? = null
@@ -156,7 +158,7 @@ class TimerViewModel(
         currentStateInfo.currentStateName = getCurrentStateName(next)
         currentStateInfo.duration = getStateDurationInt(next)
 
-        nextState = next
+        nextState = Pair(currentStateInfo.currentState, currentStateInfo.currentStateName)
         if (next == TimerState.WORK && timerState.value == TimerState.LONG_BREAK) {
             currentCycle = 0
         } else if (next != TimerState.WORK) {
@@ -183,7 +185,6 @@ class TimerViewModel(
     }
 
     fun resumeTimer(context: Context) {
-        Log.d("TimerViewModel", "Resume timer with current state: ${timerState.value}")
         if (timerState.value == TimerState.IDLE) {
             val isInfinite = (currentStateInfo.currentState == TimerState.CONTINUED_STATE)
 
@@ -197,6 +198,7 @@ class TimerViewModel(
             } else {
                 0
             }
+
             if (!isInfinite && totalDuration > 0) {
                 val remainingTime = (totalDuration - timeElapsed.value) * 1000
                 val notifyTimeInMillis = System.currentTimeMillis() + remainingTime
@@ -235,7 +237,7 @@ class TimerViewModel(
             currentStateInfo.currentState = TimerState.WORK // Resets to work state
             currentStateInfo.previousStateName = "Idle"
             currentStateInfo.currentStateName = "Work"
-            nextState = TimerState.WORK
+            nextState = Pair(TimerState.WORK, "Work")
         }
     }
 
@@ -348,7 +350,7 @@ class TimerViewModel(
         val currentState = if (timerState.value == TimerState.IDLE) {
             currentStateInfo.currentState
         } else if (timerState.value == TimerState.WAITING_FOR_USER) {
-            nextState ?: currentStateInfo.currentState
+            nextState?.first ?: currentStateInfo.currentState
         } else {
             timerState.value
         }
@@ -394,6 +396,15 @@ class TimerViewModel(
         }
     }
 
+    fun colourForCurrentState(currentState: TimerState, isLightTheme: Boolean): Color {
+        return when (currentState) {
+            TimerState.WORK -> if (isLightTheme) WorkColorLight else WorkColorDark
+            TimerState.BREAK -> if (isLightTheme) BreakColorLight else BreakColorDark
+            TimerState.LONG_BREAK -> if (isLightTheme) LongBreakColorLight else LongBreakColorDark
+            else -> Color.Gray
+        }
+    }
+
     fun getCurrentWorkDuration(): Int {
         return settings.value.workDuration
     }
@@ -401,7 +412,7 @@ class TimerViewModel(
     fun continueToNextState() {
         resetPauseDuration()
         startTime = System.currentTimeMillis()
-        timerState.value = nextState ?: TimerState.IDLE
+        timerState.value = nextState?.first ?: TimerState.WORK
         currentStateInfo.previousState = currentStateInfo.currentState
         currentStateInfo.currentState = timerState.value
         nextState = null
@@ -410,9 +421,11 @@ class TimerViewModel(
 
     fun startContinuedState() {
         resetPauseDuration()
+        wouldBeNextState = currentStateInfo.currentState
         timeElapsed.value = currentStateInfo.duration * 60 + timeElapsed.value
         timerState.value = TimerState.CONTINUED_STATE
         startTime = System.currentTimeMillis() - (timeElapsed.value * 1000)
+        nextState = Pair(currentStateInfo.currentState, currentStateInfo.currentStateName)
         currentStateInfo.currentState = TimerState.CONTINUED_STATE
     }
 
