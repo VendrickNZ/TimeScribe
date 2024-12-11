@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.map
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-class SettingsRepository(private val context: Context) {
+class SettingsRepository(context: Context) {
     private val dataStore: DataStore<Preferences> = context.dataStore
     companion object {
         val WORK_DURATION_KEY = intPreferencesKey("work_duration")
