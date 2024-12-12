@@ -114,7 +114,7 @@ fun TimerScreen(viewModel: TimerViewModel) {
                     modifier = if (isLandscape) Modifier.width(450.dp) else Modifier.width(225.dp)
                 )
             } else if (viewModel.currentStateInfo.currentState == TimerState.CONTINUED_STATE) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(if (isLandscape) 8.dp else 16.dp))
                 Text(
                     text = "Continuing ${viewModel.currentStateInfo.previousStateName}",
                     style = MaterialTheme.typography.h6,
@@ -122,15 +122,15 @@ fun TimerScreen(viewModel: TimerViewModel) {
                 )
             }
 
-            Spacer(modifier = Modifier.weight(0.5f))
+            Spacer(modifier = Modifier.weight(0.1f))
             // The main timer text
             Text(
                 text = viewModel.getFormattedTime(),
-                style = if (isLandscape) MaterialTheme.typography.h1.copy(fontSize = 160.sp) else MaterialTheme.typography.h1
+                style = if (isLandscape) MaterialTheme.typography.h1.copy(fontSize = 126.sp) else MaterialTheme.typography.h1
             )
 
             Row(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(8.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
                 when (viewModel.timerState.value) {
@@ -266,7 +266,9 @@ fun TimerScreen(viewModel: TimerViewModel) {
             }
 
             Row(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier
+                    .padding(if (isLandscape) 2.dp else 16.dp)
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
                 if (viewModel.timerState.value == TimerState.WAITING_FOR_USER) {
@@ -284,7 +286,6 @@ fun TimerScreen(viewModel: TimerViewModel) {
 
                 if (viewModel.currentStateInfo.currentState == TimerState.CONTINUED_STATE
                     && viewModel.timerState.value == TimerState.IDLE) {
-                    // Use wouldBeNextState to get the correct color for the upcoming state
                     val nextStateColor = viewModel.colourForPreviousState(viewModel.wouldBeNextState, isLightTheme)
                     Button(
                         onClick = { viewModel.continueToNextState() },
@@ -299,7 +300,7 @@ fun TimerScreen(viewModel: TimerViewModel) {
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1.5f))
+            Spacer(modifier = Modifier.weight(if (isLandscape) 0.1f else 1.5f))
         }
     }
 }
