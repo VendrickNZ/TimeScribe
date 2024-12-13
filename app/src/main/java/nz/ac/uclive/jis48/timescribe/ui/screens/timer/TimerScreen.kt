@@ -122,11 +122,11 @@ fun TimerScreen(viewModel: TimerViewModel) {
                 )
             }
 
-            Spacer(modifier = Modifier.weight(0.1f))
+            Spacer(modifier = Modifier.weight(0.25f))
             // The main timer text
             Text(
                 text = viewModel.getFormattedTime(),
-                style = if (isLandscape) MaterialTheme.typography.h1.copy(fontSize = 126.sp) else MaterialTheme.typography.h1
+                style = if (isLandscape) MaterialTheme.typography.h1.copy(fontSize = 126.sp) else MaterialTheme.typography.h1.copy(fontSize = 112.sp),
             )
 
             Row(
