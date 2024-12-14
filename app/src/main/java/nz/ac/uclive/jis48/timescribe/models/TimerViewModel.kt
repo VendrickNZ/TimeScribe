@@ -395,15 +395,6 @@ class TimerViewModel(
         }
     }
 
-    fun colourForCurrentState(currentState: TimerState, isLightTheme: Boolean): Color {
-        return when (currentState) {
-            TimerState.WORK -> if (isLightTheme) WorkColorLight else WorkColorDark
-            TimerState.BREAK -> if (isLightTheme) BreakColorLight else BreakColorDark
-            TimerState.LONG_BREAK -> if (isLightTheme) LongBreakColorLight else LongBreakColorDark
-            else -> Color.Gray
-        }
-    }
-
     fun getCurrentWorkDuration(): Int {
         return settings.value.workDuration
     }
