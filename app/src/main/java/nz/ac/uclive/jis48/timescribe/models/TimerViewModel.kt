@@ -310,7 +310,6 @@ class TimerViewModel(
         val session = Session(
             startDate = startDate ?: Date(),
             endDate = endDate ?: Date(),
-            pauseCount = pauseIntervals.size,
             totalPauseDuration = totalPauseDuration,
             totalWorkDuration = totalWorkDuration,
             pauseIntervals = pauseIntervals

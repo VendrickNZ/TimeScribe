@@ -1,7 +1,5 @@
 package nz.ac.uclive.jis48.timescribe.ui.screens.history
 
-import android.content.Context
-import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
@@ -18,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Button
 import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -38,7 +35,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import nz.ac.uclive.jis48.timescribe.R
-import nz.ac.uclive.jis48.timescribe.data.Session
 import nz.ac.uclive.jis48.timescribe.data.Settings
 import nz.ac.uclive.jis48.timescribe.models.HistoryViewModel
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
@@ -50,8 +46,7 @@ import java.util.Locale
 
 @Composable
 fun HistoryScreen(
-    historyViewModel: HistoryViewModel,
-    onShareSession: (Session) -> Unit
+    historyViewModel: HistoryViewModel
 ) {
     val timeFormatter = SimpleDateFormat("h:mma", Locale.getDefault())
     val selectedDate = remember { mutableStateOf(Date()) }
@@ -102,19 +97,15 @@ fun HistoryScreen(
 
                     ) {
                         Text(
-                            text = "${timeFormatter.format(session.startDate)} - ${
-                                timeFormatter.format(
-                                    session.endDate
-                                )
-                            }",
+                            text = "${timeFormatter.format(session.startDate)} " +
+                                    "- " +
+                                    "${
+                                        timeFormatter.format(session.endDate)
+                                    }",
                             style = MaterialTheme.typography.h6,
                         )
 
                         if (expanded.value) {
-                            Text(
-                                text = stringResource(R.string.pause_count_label) + " ${session.pauseCount}",
-                                style = MaterialTheme.typography.body2
-                            )
                             val totalPauseDurationInSeconds = session.totalPauseDuration / 1000
                             Text(
                                 text = stringResource(R.string.total_pause_duration_label) + " ${totalPauseDurationInSeconds}s",
@@ -131,9 +122,6 @@ fun HistoryScreen(
                                     ),
                                     style = MaterialTheme.typography.body2
                                 )
-                            }
-                            Button(onClick = { onShareSession(session) }) {
-                                Text("Share")
                             }
                         }
                     }
@@ -204,23 +192,6 @@ fun WeeklyCalendar(
     }
 }
 
-fun shareSession(context: Context, session: Session) {
-    val sessionDetails = """
-        Start Time: ${session.startDate}
-        End Time: ${session.endDate}
-        Pause Count: ${session.pauseCount}
-        Total Pause Duration: ${session.totalPauseDuration / 1000}s
-        // Add more details as needed
-    """.trimIndent()
-
-    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_SUBJECT, "Session Details")
-        putExtra(Intent.EXTRA_TEXT, sessionDetails)
-    }
-    context.startActivity(Intent.createChooser(shareIntent, "Share Session via"))
-}
-
 
 class HistoryFragment(
     private val historyViewModel: HistoryViewModel,
@@ -237,9 +208,6 @@ class HistoryFragment(
                 TimeScribeTheme(darkModeState = settings.darkMode) {
                     HistoryScreen(
                         historyViewModel = historyViewModel,
-                        onShareSession = { session ->
-                            shareSession(requireContext(), session)
-                        }
                     )
                 }
             }

@@ -37,7 +37,6 @@ import nz.ac.uclive.jis48.timescribe.models.SettingsViewModel
 import nz.ac.uclive.jis48.timescribe.models.SettingsViewModelFactory
 import nz.ac.uclive.jis48.timescribe.models.TimerViewModel
 import nz.ac.uclive.jis48.timescribe.ui.screens.history.HistoryScreen
-import nz.ac.uclive.jis48.timescribe.ui.screens.history.shareSession
 import nz.ac.uclive.jis48.timescribe.ui.screens.settings.SettingsScreen
 import nz.ac.uclive.jis48.timescribe.ui.screens.timer.TimerScreen
 import nz.ac.uclive.jis48.timescribe.ui.theme.TimeScribeTheme
@@ -160,7 +159,6 @@ class MainActivity : ComponentActivity() {
                 composable(HISTORY_ROUTE) {
                     HistoryScreen(
                         historyViewModel = historyViewModel,
-                        onShareSession = { session -> shareSession(this@MainActivity, session) }
                     )
                 }
                 composable(SETTINGS_ROUTE) {
