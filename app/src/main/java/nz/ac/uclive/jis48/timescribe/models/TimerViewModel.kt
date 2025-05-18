@@ -30,6 +30,7 @@ import nz.ac.uclive.jis48.timescribe.ui.theme.WorkColorLight
 import nz.ac.uclive.jis48.timescribe.utils.AlarmReceiver
 import java.util.*
 import android.provider.Settings as AndroidSettings
+import androidx.core.net.toUri
 
 class TimerViewModel(
     private val settingsViewModel: SettingsViewModel, private val timerRepository: TimerRepository
@@ -71,10 +72,10 @@ class TimerViewModel(
     private var pauseStartTime: Date? = null
     private var totalPauseDuration: Long = 0
     private val pauseIntervals = mutableListOf<Pair<Date, Date>>()
+    private var tagIntervals = mutableListOf<TagInterval>()
+    private val note = Note("Title", "Body")
     private var totalWorkDuration: Long = 0
     val sessions = mutableStateOf<List<Session>>(emptyList())
-
-
 
     val timeElapsedState: Int
         get() = timeElapsed.value
@@ -312,7 +313,9 @@ class TimerViewModel(
             endDate = endDate ?: Date(),
             totalPauseDuration = totalPauseDuration,
             totalWorkDuration = totalWorkDuration,
-            pauseIntervals = pauseIntervals
+            pauseIntervals = pauseIntervals,
+            tagInterval = tagIntervals,
+            note = note
         )
         timerRepository.saveSession(session)
         refreshSessions()
@@ -429,7 +432,7 @@ class TimerViewModel(
                     .setPositiveButton(context.getString(R.string.open_settings)) { _, _ ->
                         val intent =
                             Intent(AndroidSettings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                                data = Uri.parse("package:${context.packageName}")
+                                data = "package:${context.packageName}".toUri()
                             }
                         context.startActivity(intent)
                     }.setNegativeButton(context.getString(R.string.cancel_label), null).show()
